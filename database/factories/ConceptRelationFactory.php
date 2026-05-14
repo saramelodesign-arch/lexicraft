@@ -15,10 +15,15 @@ class ConceptRelationFactory extends Factory
 
     public function definition(): array
     {
+        $a = Concept::factory()->create();
+        $b = Concept::factory()->create();
+
         return [
-            'concept_id' => Concept::factory(),
-            'related_concept_id' => Concept::factory(),
-            'relation_type' => fake()->randomElement(['synonym', 'related', 'broader', 'narrower', 'deprecated']),
+            'concept_id' => $a->id,
+            'related_concept_id' => $b->id,
+            'relation_type' => fake()->randomElement([
+                'synonym', 'related', 'broader', 'narrower', 'deprecated', 'industry_variant',
+            ]),
         ];
     }
 }

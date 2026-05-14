@@ -30,6 +30,9 @@ class ConceptTranslationFactory extends Factory
             'seo_description' => null,
             'meta_keywords' => null,
             'industry_notes' => null,
+            'seo_canonical_url' => null,
+            'og_title' => null,
+            'og_description' => null,
         ];
     }
 }

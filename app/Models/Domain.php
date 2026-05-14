@@ -42,4 +42,23 @@ class Domain extends Model
     {
         return $this->belongsToMany(Concept::class, 'concept_domain');
     }
+
+    public function translationForLocale(string $localeCode): ?DomainTranslation
+    {
+        $languageId = Language::activeIdForCode($localeCode);
+        if ($languageId === null) {
+            return null;
+        }
+
+        if ($this->relationLoaded('translations')) {
+            $hit = $this->translations->first(
+                fn (DomainTranslation $t): bool => $t->language_id === $languageId,
+            );
+            if ($hit !== null) {
+                return $hit;
+            }
+        }
+
+        return $this->translations()->where('language_id', $languageId)->first();
+    }
 }

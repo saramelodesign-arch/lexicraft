@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Support\SemanticGraph;
 use Database\Factories\ConceptRelationFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Validation\ValidationException;
 
 class ConceptRelation extends Model
 {
@@ -13,6 +15,19 @@ class ConceptRelation extends Model
     use HasFactory;
 
     protected $guarded = [];
+
+    protected static function booted(): void
+    {
+        static::saving(function (ConceptRelation $relation): void {
+            if ($relation->concept_id === $relation->related_concept_id) {
+                throw ValidationException::withMessages([
+                    'related_concept_id' => __('A concept cannot relate to itself.'),
+                ]);
+            }
+
+            SemanticGraph::assertAllowedStoredType($relation->relation_type);
+        });
+    }
 
     public function concept(): BelongsTo
     {
