@@ -25,7 +25,7 @@
                 @endisset
                 <div class="space-y-2">
                     <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500 dark:text-zinc-400">
-                        {{ __('Multilingual glossary') }}
+                        {{ config('app.glossary_name') }}
                     </p>
                     <h1 class="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
                         {{ $pageTitle }}

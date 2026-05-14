@@ -47,7 +47,7 @@
                         {{ __('Member dashboard') }}
                     </flux:sidebar.item>
                     <flux:sidebar.item icon="arrow-top-right-on-square" :href="route('home', ['locale' => \App\Support\Locales::fallback()])" target="_blank">
-                        {{ __('Public glossary') }}
+                        {{ config('app.glossary_name') }}
                     </flux:sidebar.item>
                 </flux:sidebar.group>
             </flux:sidebar.nav>

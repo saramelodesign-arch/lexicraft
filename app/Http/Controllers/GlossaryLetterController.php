@@ -16,7 +16,7 @@ final class GlossaryLetterController extends Controller
         $languageLabel = is_array($localeMeta) ? ($localeMeta['native'] ?? $localeMeta['name'] ?? $locale) : $locale;
 
         $pageTitle = __('Glossary — letter :letter', ['letter' => $letterUpper]);
-        $metaDescription = __('Industrial footwear and leather glossary: terms starting with :letter in :language.', [
+        $metaDescription = __('LexiCraft Glossary: terms starting with :letter in :language.', [
             'letter' => $letterUpper,
             'language' => $languageLabel,
         ]);

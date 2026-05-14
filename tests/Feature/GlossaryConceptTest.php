@@ -79,6 +79,7 @@ class GlossaryConceptTest extends TestCase
         $r->assertSee($ptUrl, false);
         $r->assertSee('https://schema.org', false);
         $r->assertSee('DefinedTerm', false);
+        $r->assertSee('"name":"LexiCraft Glossary"', false);
         $r->assertSee('BreadcrumbList', false);
     }
 

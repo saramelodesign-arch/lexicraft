@@ -18,7 +18,7 @@ final class LearningProgressController extends Controller
             'locale' => $locale,
             'summary' => $summary,
             'pageTitle' => __('Learning progress'),
-            'metaDescription' => __('Your quiz completions, semantic reviews, and flashcard sessions.'),
+            'metaDescription' => __('Your LexiCraft Glossary quiz completions, semantic reviews, and flashcard sessions.'),
             'canonical' => route('learning.progress', ['locale' => $locale], absolute: true),
             'robotsMeta' => 'noindex,follow',
         ]);

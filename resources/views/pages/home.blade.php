@@ -93,7 +93,7 @@
                     {{ __('Learning') }}
                 </h2>
                 <p class="mt-1.5 max-w-xl text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
-                    {{ __('Flashcards, semantic drills, and industrial quizzes extend the glossary with the same multilingual concept graph.') }}
+                    {{ __('Flashcards, semantic drills, and industrial quizzes extend LexiCraft Glossary with the same multilingual concept graph.') }}
                 </p>
                 <div class="mt-4 flex flex-wrap gap-2">
                     <a

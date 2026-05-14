@@ -72,7 +72,7 @@ final class StructuredData
         return [
             '@context' => 'https://schema.org',
             '@type' => 'DefinedTermSet',
-            'name' => config('app.name').' — '.__('Industrial glossary'),
+            'name' => config('app.glossary_name'),
             'description' => $description,
             'url' => route('home', ['locale' => $locale], absolute: true).'#glossary',
             'inLanguage' => str_replace('_', '-', $locale),
@@ -135,7 +135,7 @@ final class StructuredData
             'inLanguage' => str_replace('_', '-', $locale),
             'inDefinedTermSet' => [
                 '@type' => 'DefinedTermSet',
-                'name' => config('app.name').' — '.__('Industrial glossary'),
+                'name' => config('app.glossary_name'),
                 'url' => route('home', ['locale' => $locale], absolute: true).'#glossary',
             ],
         ];

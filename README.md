@@ -1,6 +1,6 @@
-# LexiCraft
+# LexiCraft Glossary
 
-LexiCraft is a multilingual industrial glossary focused on footwear, leather goods, leather, and fashion accessories.
+LexiCraft is the product platform; **LexiCraft Glossary** is the public-facing industrial terminology dataset focused on footwear, leather goods, leather, and fashion accessories.
 
 The project is being built as a concept-first terminology platform designed for:
 
@@ -230,7 +230,7 @@ The foundation follows common Laravel practices: CSRF protection, hashed passwor
 
 ## Project goals
 
-LexiCraft aims to become a professional industrial glossary, a multilingual terminology platform, a technical learning resource, a semantic terminology system, and a specialized SEO knowledge surface for footwear and leather goods.
+LexiCraft and LexiCraft Glossary aim to deliver a professional industrial terminology surface, a multilingual navigation platform, a technical learning resource, a semantic knowledge graph, and a specialized SEO layer for footwear and leather goods.
 
 ---
 

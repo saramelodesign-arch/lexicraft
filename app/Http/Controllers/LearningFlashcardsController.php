@@ -33,7 +33,7 @@ final class LearningFlashcardsController extends Controller
             : __('Flashcards');
 
         $metaDescription = __(
-            'Flip cards grounded in published definitions, domains, examples, and semantic hints for this locale.',
+            'Flip cards grounded in LexiCraft Glossary: published definitions, domains, examples, and semantic hints for this locale.',
         );
 
         $canonical = $domainSlug !== ''

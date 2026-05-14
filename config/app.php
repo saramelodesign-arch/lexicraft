@@ -13,7 +13,18 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Laravel'),
+    'name' => env('APP_NAME', 'LexiCraft'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Glossary product name
+    |--------------------------------------------------------------------------
+    |
+    | Public-facing name for the terminology dataset (titles, JSON-LD, OG).
+    |
+    */
+
+    'glossary_name' => env('APP_GLOSSARY_NAME', 'LexiCraft Glossary'),
 
     /*
     |--------------------------------------------------------------------------

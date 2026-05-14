@@ -10,9 +10,10 @@ final class HomeController extends Controller
 {
     public function __invoke(string $locale): View
     {
-        $pageTitle = __('Industrial glossary');
+        $pageTitle = config('app.glossary_name');
         $metaDescription = __(
-            'Industrial terminology for footwear, leather goods, belts, manufacturing, CAD/CAM, and production processes. Search definitions, domains, and multilingual concepts.',
+            ':glossary — industrial terminology for footwear, leather goods, belts, manufacturing, CAD/CAM, and production processes. Search definitions, domains, and multilingual concepts.',
+            ['glossary' => config('app.glossary_name')],
         );
         $canonical = route('home', ['locale' => $locale], absolute: true);
 

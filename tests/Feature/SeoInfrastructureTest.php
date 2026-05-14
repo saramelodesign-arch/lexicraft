@@ -145,6 +145,7 @@ class SeoInfrastructureTest extends TestCase
         $r->assertSee('"@type":"Organization"', false);
         $r->assertSee('"@type":"WebSite"', false);
         $r->assertSee('"@type":"DefinedTermSet"', false);
+        $r->assertSee('"name":"LexiCraft Glossary"', false);
     }
 
     #[Test]

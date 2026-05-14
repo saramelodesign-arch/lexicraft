@@ -10,7 +10,7 @@ final class LearningSemanticController extends Controller
     {
         $pageTitle = __('Semantic practice');
         $metaDescription = __(
-            'Train synonym, broader/narrower, and related-term recognition using the live semantic graph.',
+            'Train synonym, broader/narrower, and related-term recognition using the LexiCraft Glossary semantic graph.',
         );
         $canonical = route('learning.semantic', ['locale' => $locale], absolute: true);
 

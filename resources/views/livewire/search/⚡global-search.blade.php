@@ -209,7 +209,7 @@ new class extends Component
                 </button>
                 <p class="border-t border-zinc-100 px-3.5 py-2 text-[11px] leading-snug text-zinc-500 dark:border-zinc-800 dark:text-zinc-500">
                     @if (\App\Support\GlossaryScoutQuery::usesMeilisearch())
-                        {{ __('Meilisearch index: typo-tolerant, locale-filtered industrial glossary discovery.') }}
+                        {{ __('Meilisearch index: typo-tolerant, locale-filtered LexiCraft Glossary discovery.') }}
                     @else
                         {{ __('Lexical SQL search in this locale. Set SCOUT_DRIVER=meilisearch for typo-tolerant ranking.') }}
                     @endif

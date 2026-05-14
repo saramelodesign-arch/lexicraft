@@ -12,7 +12,7 @@ final class LearningHubController extends Controller
     {
         $pageTitle = __('Terminology learning');
         $metaDescription = __(
-            'Industrial flashcards, quizzes, and semantic practice mapped to multilingual concepts, domains, and relations.',
+            'LexiCraft Glossary learning hub: flashcards, quizzes, and semantic practice mapped to multilingual concepts, domains, and relations.',
         );
         $canonical = route('learning.index', ['locale' => $locale], absolute: true);
 

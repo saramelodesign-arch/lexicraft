@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Industrial glossary concepts (batch 1 of 3). Keys match relation endpoints.
+ * LexiCraft Glossary concepts (batch 1 of 3). Keys match relation endpoints.
  *
  * @return list<array<string, mixed>>
  */

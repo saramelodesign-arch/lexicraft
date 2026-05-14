@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Industrial glossary concepts (batch 3 of 3).
+ * LexiCraft Glossary concepts (batch 3 of 3).
  *
  * @return list<array<string, mixed>>
  */

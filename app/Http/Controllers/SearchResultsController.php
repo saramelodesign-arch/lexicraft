@@ -16,8 +16,8 @@ final class SearchResultsController extends Controller
             : __('Search');
 
         $metaDescription = $q !== ''
-            ? __('Industrial glossary results for ":q" in this language. Paginated definitions with domain context.', ['q' => $q])
-            : __('Search published terms, definitions, and domains in the industrial glossary.');
+            ? __('LexiCraft Glossary results for ":q" in this language. Paginated definitions with domain context.', ['q' => $q])
+            : __('Search published terms, definitions, and domains in LexiCraft Glossary.');
 
         $canonical = $q !== ''
             ? route('search', ['locale' => $locale, 'q' => $q], absolute: true)

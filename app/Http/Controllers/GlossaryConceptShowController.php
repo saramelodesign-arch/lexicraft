@@ -50,7 +50,7 @@ final class GlossaryConceptShowController extends Controller
 
         $pageTitle = filled($translation->seo_title)
             ? $translation->seo_title
-            : $translation->term.' — '.__('Glossary');
+            : $translation->term.' — '.config('app.glossary_name');
 
         $rawDescription = $translation->seo_description
             ?? $translation->short_definition

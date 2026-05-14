@@ -17,7 +17,7 @@ final class LearningQuizzesIndexController extends Controller
             ->get();
 
         $pageTitle = __('Quizzes');
-        $metaDescription = __('Industrial terminology assessments aligned with glossary concepts and domains.');
+        $metaDescription = __('LexiCraft Glossary terminology assessments aligned with concepts and domains.');
         $canonical = route('learning.quizzes', ['locale' => $locale], absolute: true);
 
         return view('pages.learning.quizzes-index', [

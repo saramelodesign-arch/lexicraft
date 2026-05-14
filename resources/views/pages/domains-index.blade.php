@@ -30,7 +30,7 @@
                     {{ __('Industrial domains') }}
                 </h1>
                 <p class="max-w-2xl text-[13px] leading-relaxed text-zinc-600 dark:text-zinc-400">
-                    {{ __('Structured taxonomy for multilingual glossary navigation. Counts reflect published concepts with a translation in the current language.') }}
+                    {{ __('Structured taxonomy for LexiCraft Glossary navigation. Counts reflect published concepts with a translation in the current language.') }}
                 </p>
             </div>
 

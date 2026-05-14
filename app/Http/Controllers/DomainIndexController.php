@@ -40,7 +40,7 @@ final class DomainIndexController extends Controller
             ->get();
 
         $pageTitle = __('Industrial domains');
-        $metaDescription = __('Browse the industrial taxonomy: domains, sub-domains, and published glossary coverage by production area.');
+        $metaDescription = __('Browse domains and published concept coverage in LexiCraft Glossary by production area.');
         $canonical = route('domains.index', ['locale' => $locale], absolute: true);
 
         $alternates = [];

@@ -11,6 +11,7 @@ new class extends Component {
         <div class="grid gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4 lg:gap-8">
             <div class="sm:col-span-2 lg:col-span-2">
                 <p class="text-xs font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">{{ config('app.name') }}</p>
+                <p class="mt-0.5 text-[10px] font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-500">{{ config('app.glossary_name') }}</p>
                 <p class="mt-1.5 max-w-md text-[11px] leading-relaxed text-zinc-600 dark:text-zinc-400">
                     {{ __('Multilingual industrial terminology for footwear, leather goods, and manufacturing—structured for engineering, production, and quality teams.') }}
                 </p>

@@ -2,7 +2,7 @@
     "$schema": "https://getcomposer.org/schema.json",
     "name": "saramelodesign/lexicraft",
     "type": "project",
-    "description": "Industrial multilingual glossary for the footwear, leather goods and leather industry built with Laravel 13, Livewire 4 and PostgreSQL.",
+    "description": "LexiCraft Glossary — industrial multilingual terminology for footwear, leather goods, and leather manufacturing. Built with Laravel 13, Livewire 4, and PostgreSQL.",
     "keywords": [
         "laravel",
         "livewire",
