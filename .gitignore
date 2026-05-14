@@ -22,3 +22,22 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+
+# Cursor & AI tooling
+.cursor/
+.cursor-agent/
+.claude/
+.ai/
+
+# OS junk
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Local caches & debug
+*.log
+.npm-cache/
+
+# Spatie Media Library temporary uploads (not application code)
+/storage/media-library/

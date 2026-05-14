@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\ConceptTranslation;
+
 return [
 
     /*
@@ -140,9 +142,45 @@ return [
         'host' => env('MEILISEARCH_HOST', 'http://localhost:7700'),
         'key' => env('MEILISEARCH_KEY'),
         'index-settings' => [
-            // 'users' => [
-            //     'filterableAttributes'=> ['id', 'name', 'email'],
-            // ],
+            ConceptTranslation::class => [
+                'searchableAttributes' => [
+                    'term',
+                    'slug',
+                    'synonyms',
+                    'domain_names',
+                    'related_terms',
+                    'relation_types',
+                    'examples_snippet',
+                    'short_definition',
+                    'full_definition',
+                    'searchable_text',
+                ],
+                'filterableAttributes' => [
+                    'language_code',
+                    'is_published',
+                    'domain_slugs',
+                    'relation_types',
+                    'concept_id',
+                ],
+                'sortableAttributes' => [
+                    'term',
+                ],
+                'rankingRules' => [
+                    'words',
+                    'typo',
+                    'proximity',
+                    'attribute',
+                    'sort',
+                    'exactness',
+                ],
+                'typoTolerance' => [
+                    'enabled' => true,
+                    'minWordSizeForTypos' => [
+                        'oneTypo' => 4,
+                        'twoTypos' => 8,
+                    ],
+                ],
+            ],
         ],
     ],
 
