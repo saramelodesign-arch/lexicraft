@@ -6,13 +6,9 @@ use Tests\TestCase;
 
 class VerifiedMiddlewareTest extends TestCase
 {
-    /**
-     * A basic feature test example.
-     */
-    public function test_example(): void
+    public function test_root_redirects_to_localized_home(): void
     {
-        $response = $this->get('/');
-
-        $response->assertStatus(200);
+        $this->get('/')
+            ->assertRedirect(route('home', ['locale' => 'en']));
     }
 }

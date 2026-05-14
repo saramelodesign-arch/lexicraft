@@ -28,5 +28,7 @@ class LocalesConfigTest extends TestCase
         $this->assertSame(array_keys(config('locales.supported')), Locales::codes());
         $this->assertTrue(Locales::isSupported('de'));
         $this->assertFalse(Locales::isSupported('xx'));
+        $this->assertSame('en', config('locales.fallback'));
+        $this->assertSame('en', Locales::fallback());
     }
 }
