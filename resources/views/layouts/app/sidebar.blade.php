@@ -12,6 +12,11 @@
 
             <flux:sidebar.nav>
                 <flux:sidebar.group :heading="__('Platform')" class="grid">
+                @can('access-admin')
+                    <flux:sidebar.item icon="pencil-square" :href="route('admin.dashboard')" :current="request()->routeIs('admin.*')" wire:navigate>
+                        {{ __('LexiCraft editorial') }}
+                    </flux:sidebar.item>
+                @endcan
                     <flux:sidebar.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>
                         {{ __('Dashboard') }}
                     </flux:sidebar.item>

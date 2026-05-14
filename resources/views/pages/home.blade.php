@@ -1,21 +1,14 @@
-@php
-    $homeTitle = __('Industrial glossary');
-    $metaDescription = __('Industrial terminology for footwear and leather goods. Search terms, definitions, translations, and domains across languages.');
-    $structuredData = [
-        '@context' => 'https://schema.org',
-        '@type' => 'DefinedTermSet',
-        'name' => config('app.name'),
-        'description' => $metaDescription,
-        'url' => url('/'),
-    ];
-@endphp
-
 <x-layouts::site
-    :title="$homeTitle"
+    :title="$pageTitle"
     :meta-description="$metaDescription"
-    :canonical="url('/')"
-    :structured-data="$structuredData"
+    :canonical="$canonical"
+    :og-url="$canonical"
+    :json-ld-blocks="$jsonLdBlocks"
 >
+    @push('meta')
+        @include('partials.hreflang-alternates', ['alternates' => $alternates, 'xDefaultUrl' => $xDefaultUrl])
+    @endpush
+
     <livewire:layout.header />
 
     <main id="content" class="flex-1">
@@ -76,7 +69,7 @@
                         @foreach (range('A', 'Z') as $letter)
                             <a
                                 wire:navigate
-                                href="{{ route('glossary.letter', ['locale' => \Illuminate\Support\Str::before(app()->getLocale(), '_'), 'letter' => strtolower($letter)]) }}"
+                                href="{{ route('glossary.letter', ['locale' => $locale, 'letter' => strtolower($letter)]) }}"
                                 class="inline-flex min-w-[1.75rem] justify-center rounded-md border border-zinc-200/90 bg-zinc-50 px-1.5 py-1 text-center text-[12px] font-medium tabular-nums text-zinc-700 transition-colors hover:border-zinc-400 hover:bg-white hover:text-zinc-900 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-300 dark:hover:border-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-50"
                             >
                                 {{ $letter }}
@@ -92,17 +85,46 @@
         </section>
 
         <section
-            id="learning-heading"
             class="scroll-mt-20 border-b border-zinc-200 bg-zinc-50 py-9 dark:border-zinc-800 dark:bg-zinc-950/80"
-            aria-labelledby="learning-heading"
+            aria-labelledby="learning-section-heading"
         >
             <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                <h2 id="learning-heading" class="text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
+                <h2 id="learning-section-heading" class="text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
                     {{ __('Learning') }}
                 </h2>
                 <p class="mt-1.5 max-w-xl text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
-                    {{ __('Structured guides and learning paths will appear here. This section is reserved for future content.') }}
+                    {{ __('Flashcards, semantic drills, and industrial quizzes extend the glossary with the same multilingual concept graph.') }}
                 </p>
+                <div class="mt-4 flex flex-wrap gap-2">
+                    <a
+                        href="{{ route('learning.index', ['locale' => $locale]) }}"
+                        wire:navigate
+                        class="inline-flex items-center rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs font-medium text-zinc-800 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                    >
+                        {{ __('Learning hub') }}
+                    </a>
+                    <a
+                        href="{{ route('learning.flashcards', ['locale' => $locale]) }}"
+                        wire:navigate
+                        class="inline-flex items-center rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs font-medium text-zinc-800 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                    >
+                        {{ __('Flashcards') }}
+                    </a>
+                    <a
+                        href="{{ route('learning.semantic', ['locale' => $locale]) }}"
+                        wire:navigate
+                        class="inline-flex items-center rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs font-medium text-zinc-800 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                    >
+                        {{ __('Semantic practice') }}
+                    </a>
+                    <a
+                        href="{{ route('learning.quizzes', ['locale' => $locale]) }}"
+                        wire:navigate
+                        class="inline-flex items-center rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs font-medium text-zinc-800 transition-colors hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                    >
+                        {{ __('Quizzes') }}
+                    </a>
+                </div>
             </div>
         </section>
     </main>

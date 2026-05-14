@@ -2,8 +2,36 @@
     'title' => null,
     'metaDescription' => null,
     'canonical' => null,
+    'ogUrl' => null,
+    'ogType' => 'website',
     'structuredData' => null,
+    'jsonLdBlocks' => [],
+    'ogImage' => null,
+    'ogImageAlt' => null,
+    'ogTitle' => null,
+    'ogDescription' => null,
+    'robotsMeta' => null,
 ])
+
+@php
+    $ogUrlFinal = filled($ogUrl) ? $ogUrl : ($canonical ?? url()->current());
+    $graphs = [];
+    if (filled($structuredData) && is_array($structuredData)) {
+        $graphs[] = $structuredData;
+    }
+    foreach ($jsonLdBlocks as $block) {
+        if (is_array($block) && $block !== []) {
+            $graphs[] = $block;
+        }
+    }
+    $ogTitle = filled($ogTitle ?? null)
+        ? (string) $ogTitle
+        : (filled($title) ? $title.' — '.config('app.name') : config('app.name'));
+    $ogDescriptionFinal = filled($ogDescription ?? null)
+        ? (string) $ogDescription
+        : ($metaDescription ?? null);
+    $twitterCard = filled($ogImage) ? 'summary_large_image' : 'summary';
+@endphp
 
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
@@ -14,6 +42,10 @@
 
         @include('partials.head')
 
+        @if (filled($robotsMeta))
+            <meta name="robots" content="{{ $robotsMeta }}">
+        @endif
+
         @if (filled($metaDescription))
             <meta name="description" content="{{ $metaDescription }}">
         @endif
@@ -22,21 +54,40 @@
             <link rel="canonical" href="{{ $canonical }}">
         @endif
 
-        @php
-            $ogTitle = filled($title) ? $title.' — '.config('app.name') : config('app.name');
-        @endphp
-        <meta property="og:type" content="website">
+        <meta property="og:type" content="{{ $ogType }}">
         <meta property="og:title" content="{{ $ogTitle }}">
-        <meta property="og:url" content="{{ url()->current() }}">
-        @if (filled($metaDescription))
+        <meta property="og:url" content="{{ $ogUrlFinal }}">
+        @if (filled($ogDescriptionFinal))
+            <meta property="og:description" content="{{ $ogDescriptionFinal }}">
+        @elseif (filled($metaDescription))
             <meta property="og:description" content="{{ $metaDescription }}">
         @endif
+        <meta property="og:locale" content="{{ str_replace('_', '-', app()->getLocale()) }}">
+        <meta property="og:site_name" content="{{ config('app.name') }}">
 
-        @if (filled($structuredData))
-            <script type="application/ld+json">
-                {!! json_encode($structuredData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
-            </script>
+        @if (filled($ogImage))
+            <meta property="og:image" content="{{ $ogImage }}">
+            @if (filled($ogImageAlt))
+                <meta property="og:image:alt" content="{{ $ogImageAlt }}">
+            @endif
         @endif
+
+        <meta name="twitter:card" content="{{ $twitterCard }}">
+        <meta name="twitter:title" content="{{ $ogTitle }}">
+        @if (filled($ogDescriptionFinal))
+            <meta name="twitter:description" content="{{ $ogDescriptionFinal }}">
+        @elseif (filled($metaDescription))
+            <meta name="twitter:description" content="{{ $metaDescription }}">
+        @endif
+        @if (filled($ogImage))
+            <meta name="twitter:image" content="{{ $ogImage }}">
+        @endif
+
+        @foreach ($graphs as $graph)
+            <script type="application/ld+json">
+                {!! json_encode($graph, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}
+            </script>
+        @endforeach
 
         @stack('meta')
     </head>
