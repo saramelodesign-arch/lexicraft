@@ -5,7 +5,10 @@ namespace App\Support;
 use App\Models\ConceptTranslation;
 use App\Models\DomainTranslation;
 use App\Models\Language;
+use App\Support\Editorial\WorkflowStatus;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 /**
  * Supported UI / content locale codes and metadata.
@@ -36,6 +39,11 @@ final class Locales
         return array_key_exists($locale, self::supported());
     }
 
+    public static function isSupportedOrNull(mixed $locale): bool
+    {
+        return is_string($locale) && self::isSupported($locale);
+    }
+
     public static function fallback(): string
     {
         $fallback = config('locales.fallback');
@@ -54,23 +62,42 @@ final class Locales
     }
 
     /**
-     * Preferred locale from query (?locale=), session, or cookie; then fallback.
+     * Validation rule for locale fields.
+     */
+    public static function localeRule()
+    {
+        return Rule::in(self::codes());
+    }
+
+    /**
+     * Preferred locale priority:
+     * 1) authenticated user preference
+     * 2) session / cookie
+     * 3) legacy query (?locale=)
+     * 4) fallback
      */
     public static function preferredFromRequest(Request $request): string
     {
-        $query = $request->query('locale');
-        if (is_string($query) && self::isSupported($query)) {
-            return $query;
+        $userLocale = Auth::user()?->preferred_locale;
+        if (self::isSupportedOrNull($userLocale)) {
+            return $userLocale;
         }
 
-        $sessionLocale = $request->session()->get('locale');
-        if (is_string($sessionLocale) && self::isSupported($sessionLocale)) {
-            return $sessionLocale;
+        if ($request->hasSession()) {
+            $sessionLocale = $request->session()->get('locale');
+            if (self::isSupportedOrNull($sessionLocale)) {
+                return $sessionLocale;
+            }
         }
 
         $cookieLocale = $request->cookie('locale');
-        if (is_string($cookieLocale) && self::isSupported($cookieLocale)) {
+        if (self::isSupportedOrNull($cookieLocale)) {
             return $cookieLocale;
+        }
+
+        $query = $request->query('locale');
+        if (self::isSupportedOrNull($query)) {
+            return $query;
         }
 
         return self::fallback();
@@ -216,6 +243,7 @@ final class Locales
         $source = ConceptTranslation::query()
             ->where('slug', $slug)
             ->where('language_id', $sourceLanguageId)
+            ->where('status', WorkflowStatus::PUBLISHED)
             ->whereHas('concept', fn ($q) => $q->where('status', 'published'))
             ->first();
 
@@ -224,7 +252,7 @@ final class Locales
         }
 
         $target = $source->concept?->translationForLocale($targetLocale);
-        if ($target === null) {
+        if ($target === null || $target->status !== WorkflowStatus::PUBLISHED) {
             return route('home', ['locale' => $targetLocale], absolute: false);
         }
 

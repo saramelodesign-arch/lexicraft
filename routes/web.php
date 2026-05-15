@@ -34,10 +34,6 @@ Route::get('/sitemaps/domains-{locale}.xml', SitemapDomainsController::class)
     ->name('sitemaps.domains');
 
 Route::get('/', function (Request $request) {
-    if ($request->filled('locale') && Locales::isSupported($request->string('locale')->toString())) {
-        return redirect()->route('home', ['locale' => $request->string('locale')->toString()]);
-    }
-
     return redirect()->route('home', ['locale' => Locales::preferredFromRequest($request)]);
 })->name('root.redirect');
 

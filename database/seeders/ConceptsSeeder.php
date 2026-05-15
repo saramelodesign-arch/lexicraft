@@ -7,9 +7,8 @@ use App\Models\ConceptRelation;
 use App\Models\ConceptTranslation;
 use App\Models\Domain;
 use App\Models\Example;
-use App\Models\Example;
 use App\Models\Language;
-use App\Models\Language;
+use App\Support\Editorial\WorkflowStatus;
 use App\Support\SemanticGraph;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -19,23 +18,10 @@ class ConceptsSeeder extends Seeder
 {
     public function run(): void
     {
-        $batches = [
-            __DIR__.'/Data/IndustrialConceptsBatch1.php',
-            __DIR__.'/Data/IndustrialConceptsBatch2.php',
-            __DIR__.'/Data/IndustrialConceptsBatch3.php',
-        ];
-
-        $concepts = [];
-        foreach ($batches as $path) {
-            $slice = require $path;
-            if (! is_array($slice)) {
-                continue;
-            }
-            $concepts = array_merge($concepts, $slice);
-        }
-
-        /** @var list<array{from: string, to: string, type: string}> $relations */
-        $relations = require __DIR__.'/Data/IndustrialConceptsRelations.php';
+        /** @var array{concepts: list<array<string, mixed>>, relations: list<array{from: string, to: string, type: string}>} $dataset */
+        $dataset = require __DIR__.'/Data/FootwearConstructionDataset.php';
+        $concepts = $dataset['concepts'];
+        $relations = $dataset['relations'];
 
         $languages = Language::query()->get()->keyBy('code');
         $domainsBySlug = Domain::query()->get()->keyBy('slug');
@@ -51,7 +37,7 @@ class ConceptsSeeder extends Seeder
             foreach ($concepts as $row) {
                 $key = $row['key'];
                 $concept = Concept::query()->create([
-                    'status' => 'published',
+                    'status' => WorkflowStatus::PUBLISHED,
                     'difficulty_level' => $row['difficulty_level'] ?? 'intermediate',
                     'is_featured' => (bool) ($row['featured'] ?? false),
                 ]);
@@ -75,6 +61,7 @@ class ConceptsSeeder extends Seeder
                     $translation = ConceptTranslation::query()->create([
                         'concept_id' => $concept->id,
                         'language_id' => $language->id,
+                        'status' => WorkflowStatus::PUBLISHED,
                         'term' => $tr['term'],
                         'slug' => $slug,
                         'short_definition' => $tr['short_definition'] ?? null,

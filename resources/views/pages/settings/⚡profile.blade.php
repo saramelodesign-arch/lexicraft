@@ -1,6 +1,7 @@
 <?php
 
 use App\Concerns\ProfileValidationRules;
+use App\Support\Locales;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Flux\Flux;
 use Illuminate\Support\Facades\Auth;
@@ -13,6 +14,7 @@ new #[Title('Profile settings')] class extends Component {
 
     public string $name = '';
     public string $email = '';
+    public string $preferred_locale = '';
 
     /**
      * Mount the component.
@@ -21,6 +23,7 @@ new #[Title('Profile settings')] class extends Component {
     {
         $this->name = Auth::user()->name;
         $this->email = Auth::user()->email;
+        $this->preferred_locale = Auth::user()->preferred_locale;
     }
 
     /**
@@ -30,7 +33,10 @@ new #[Title('Profile settings')] class extends Component {
     {
         $user = Auth::user();
 
-        $validated = $this->validate($this->profileRules($user->id));
+        $validated = $this->validate([
+            ...$this->profileRules($user->id),
+            'preferred_locale' => ['required', 'string', Locales::localeRule()],
+        ]);
 
         $user->fill($validated);
 
@@ -78,14 +84,14 @@ new #[Title('Profile settings')] class extends Component {
 <section class="w-full">
     @include('partials.settings-heading')
 
-    <flux:heading class="sr-only">{{ __('Profile settings') }}</flux:heading>
+    <flux:heading class="sr-only">{{ __('ui.settings_profile_title') }}</flux:heading>
 
-    <x-pages::settings.layout :heading="__('Profile')" :subheading="__('Update your name and email address')">
+    <x-pages::settings.layout :heading="__('ui.profile')" :subheading="__('ui.settings_profile_subtitle')">
         <form wire:submit="updateProfileInformation" class="my-6 w-full space-y-6">
-            <flux:input wire:model="name" :label="__('Name')" type="text" required autofocus autocomplete="name" />
+            <flux:input wire:model="name" :label="__('ui.name')" type="text" required autofocus autocomplete="name" />
 
             <div>
-                <flux:input wire:model="email" :label="__('Email')" type="email" required autocomplete="email" />
+                <flux:input wire:model="email" :label="__('ui.email')" type="email" required autocomplete="email" />
 
                 @if ($this->hasUnverifiedEmail)
                     <div>
@@ -101,9 +107,15 @@ new #[Title('Profile settings')] class extends Component {
                 @endif
             </div>
 
+            <flux:select wire:model="preferred_locale" :label="__('ui.preferred_language')" required>
+                @foreach (Locales::supported() as $code => $localeMeta)
+                    <option value="{{ $code }}">{{ $localeMeta['native'] }}</option>
+                @endforeach
+            </flux:select>
+
             <div class="flex items-center gap-4">
                 <flux:button variant="primary" type="submit" data-test="update-profile-button">
-                    {{ __('Save') }}
+                    {{ __('ui.save') }}
                 </flux:button>
             </div>
         </form>

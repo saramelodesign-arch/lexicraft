@@ -6,6 +6,7 @@ use App\Models\Concept;
 use App\Models\ConceptTranslation;
 use App\Models\Language;
 use App\Support\ConceptMedia;
+use App\Support\Editorial\WorkflowStatus;
 use App\Support\Locales;
 use App\Support\SemanticGraph;
 use App\Support\Seo\StructuredData;
@@ -29,7 +30,8 @@ final class GlossaryConceptShowController extends Controller
         $translation = ConceptTranslation::query()
             ->where('slug', $slug)
             ->where('language_id', $languageId)
-            ->whereHas('concept', fn ($q) => $q->where('status', 'published'))
+            ->where('status', WorkflowStatus::PUBLISHED)
+            ->whereHas('concept', fn ($q) => $q->where('status', WorkflowStatus::PUBLISHED))
             ->with([
                 'language',
                 'examples' => fn ($q) => $q->orderBy('sort_order'),
@@ -76,7 +78,7 @@ final class GlossaryConceptShowController extends Controller
         $alternates = [];
         foreach (Locales::codes() as $code) {
             $peer = $concept->translationForLocale($code);
-            if ($peer !== null) {
+            if ($peer !== null && $peer->status === WorkflowStatus::PUBLISHED) {
                 $alternates[$code] = route('glossary.concept', ['locale' => $code, 'slug' => $peer->slug], absolute: true);
             }
         }

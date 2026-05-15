@@ -5,6 +5,16 @@
 @endsection
 
 @section('content')
+    @if ($semanticWarnings !== [])
+        <flux:card class="p-4">
+            <ul class="space-y-1 text-sm text-amber-700 dark:text-amber-300">
+                @foreach ($semanticWarnings as $warning)
+                    <li>• {{ $warning }}</li>
+                @endforeach
+            </ul>
+        </flux:card>
+    @endif
+
     <div class="flex flex-wrap items-center justify-between gap-3">
         <flux:text class="text-sm text-zinc-500">{{ __('UUID: :u', ['u' => $concept->uuid]) }}</flux:text>
         <div class="flex flex-wrap gap-2">
@@ -36,7 +46,7 @@
                 <div class="space-y-2">
                     <flux:label>{{ __('Workflow status') }}</flux:label>
                     <select name="status" required class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-900">
-                        @foreach (['draft', 'published', 'archived'] as $st)
+                        @foreach ($workflowStates as $st)
                             <option value="{{ $st }}" @selected(old('status', $concept->status) === $st)>{{ ucfirst($st) }}</option>
                         @endforeach
                     </select>
@@ -231,6 +241,14 @@
                         @endforeach
                     </select>
                 </div>
+            <div class="space-y-2">
+                <flux:label>{{ __('Translation status') }}</flux:label>
+                <select name="status" required class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-900">
+                    @foreach ($workflowStates as $st)
+                        <option value="{{ $st }}" @selected(old('status', $concept->status) === $st)>{{ ucfirst($st) }}</option>
+                    @endforeach
+                </select>
+            </div>
                 <flux:input name="term" :label="__('Term')" required />
                 <flux:input name="slug" :label="__('URL slug')" required />
                 <flux:textarea name="short_definition" rows="2" :label="__('Short definition')"></flux:textarea>
@@ -254,6 +272,26 @@
             <form method="post" action="{{ route('admin.concepts.translations.update', [$concept, $translation]) }}" class="mt-6 space-y-4">
                 @csrf
                 @method('PUT')
+                <div class="space-y-2">
+                    <flux:label>{{ __('Translation status') }}</flux:label>
+                    <select name="status" required class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-900">
+                        @foreach ($workflowStates as $st)
+                            <option value="{{ $st }}" @selected(old('status', $translation->status) === $st)>{{ ucfirst($st) }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                @php $nearDuplicates = $translationDuplicateWarnings[$translation->id] ?? collect(); @endphp
+                @if ($nearDuplicates->isNotEmpty())
+                    <div class="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-200">
+                        <p class="font-medium">{{ __('Potential near-duplicate terms detected:') }}</p>
+                        <ul class="mt-1 list-disc ps-5">
+                            @foreach ($nearDuplicates as $dup)
+                                <li>{{ $dup->term }} (#{{ $dup->concept_id }}, {{ $dup->slug }})</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
                 <div class="grid gap-4 md:grid-cols-2">
                     <flux:input name="term" value="{{ old('term', $translation->term) }}" :label="__('Term')" required />
                     <flux:input name="slug" value="{{ old('slug', $translation->slug) }}" :label="__('URL slug')" required />

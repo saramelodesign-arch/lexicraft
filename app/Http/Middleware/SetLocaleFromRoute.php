@@ -19,6 +19,11 @@ final class SetLocaleFromRoute
             abort(404);
         }
 
+        $preferredLocale = $request->user()?->preferred_locale;
+        if (Locales::isSupportedOrNull($preferredLocale) && $preferredLocale !== $locale) {
+            return redirect()->to(Locales::localizedUrl($preferredLocale));
+        }
+
         app()->setLocale($locale);
         $request->session()->put('locale', $locale);
 

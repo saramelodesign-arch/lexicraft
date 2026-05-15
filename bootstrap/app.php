@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureUserCanAccessAdmin;
+use App\Http\Middleware\ResolvePreferredLocale;
 use App\Http\Middleware\SetLocaleFromRoute;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -13,6 +14,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->web(prepend: [
+            ResolvePreferredLocale::class,
+        ]);
+
         $middleware->alias([
             'locale' => SetLocaleFromRoute::class,
             'admin' => EnsureUserCanAccessAdmin::class,

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Domain;
 use App\Models\Language;
+use App\Support\Editorial\WorkflowStatus;
 use App\Support\Locales;
 use App\Support\Seo\StructuredData;
 use Illuminate\Contracts\View\View;
@@ -32,8 +33,8 @@ final class DomainIndexController extends Controller
             ])
             ->withCount([
                 'concepts as terms_count' => function ($q) use ($languageId): void {
-                    $q->where('concepts.status', 'published')
-                        ->whereHas('translations', fn ($t) => $t->where('language_id', $languageId));
+                    $q->where('concepts.status', WorkflowStatus::PUBLISHED)
+                        ->whereHas('translations', fn ($t) => $t->where('language_id', $languageId)->where('status', WorkflowStatus::PUBLISHED));
                 },
             ])
             ->orderBy('sort_order')

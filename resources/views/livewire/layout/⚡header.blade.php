@@ -21,16 +21,16 @@ new class extends Component {
             <span class="text-[12px] font-semibold tracking-tight text-zinc-800 dark:text-zinc-100">{{ config('app.name') }}</span>
         </a>
 
-        <nav class="hidden items-center gap-0 lg:flex" aria-label="{{ __('Primary') }}">
+        <nav class="hidden items-center gap-0 lg:flex" aria-label="{{ __('ui.primary_navigation') }}">
             @php
                 $domainsIndex = route('domains.index', ['locale' => \App\Support\Locales::current()], absolute: false);
             @endphp
                 @foreach (
                     [
-                        ['label' => __('Glossary'), 'href' => '#site-search'],
-                        ['label' => __('Domains'), 'href' => $domainsIndex],
-                        ['label' => __('Learning'), 'href' => route('learning.index', ['locale' => \App\Support\Locales::current()], absolute: false)],
-                        ['label' => __('About'), 'href' => '#'],
+                        ['label' => __('ui.glossary'), 'href' => '#site-search'],
+                        ['label' => __('ui.domains'), 'href' => $domainsIndex],
+                        ['label' => __('ui.learning'), 'href' => route('learning.index', ['locale' => \App\Support\Locales::current()], absolute: false)],
+                        ['label' => __('ui.about'), 'href' => '#'],
                     ]
                         as $item
                 )
@@ -49,10 +49,10 @@ new class extends Component {
             <flux:button variant="ghost" size="sm" icon="bars-2" class="size-7 text-zinc-600 dark:text-zinc-400" />
 
             <flux:menu>
-                <flux:menu.item href="#site-search">{{ __('Glossary') }}</flux:menu.item>
-                <flux:menu.item :href="route('domains.index', ['locale' => \App\Support\Locales::current()])" wire:navigate>{{ __('Domains') }}</flux:menu.item>
-                <flux:menu.item :href="route('learning.index', ['locale' => \App\Support\Locales::current()])" wire:navigate>{{ __('Learning') }}</flux:menu.item>
-                <flux:menu.item href="#">{{ __('About') }}</flux:menu.item>
+                <flux:menu.item href="#site-search">{{ __('ui.glossary') }}</flux:menu.item>
+                <flux:menu.item :href="route('domains.index', ['locale' => \App\Support\Locales::current()])" wire:navigate>{{ __('ui.domains') }}</flux:menu.item>
+                <flux:menu.item :href="route('learning.index', ['locale' => \App\Support\Locales::current()])" wire:navigate>{{ __('ui.learning') }}</flux:menu.item>
+                <flux:menu.item href="#">{{ __('ui.about') }}</flux:menu.item>
             </flux:menu>
         </flux:dropdown>
 
@@ -80,9 +80,9 @@ new class extends Component {
 
         <div class="hidden origin-right scale-[0.78] items-center rounded-md border border-zinc-200/60 bg-zinc-100/35 p-px dark:border-zinc-800/80 dark:bg-zinc-900/35 sm:flex">
             <flux:radio.group x-data variant="segmented" x-model="$flux.appearance">
-                <flux:radio value="light" icon="sun" title="{{ __('Light') }}" />
-                <flux:radio value="dark" icon="moon" title="{{ __('Dark') }}" />
-                <flux:radio value="system" icon="computer-desktop" title="{{ __('System') }}" />
+                <flux:radio value="light" icon="sun" title="{{ __('ui.theme_light') }}" />
+                <flux:radio value="dark" icon="moon" title="{{ __('ui.theme_dark') }}" />
+                <flux:radio value="system" icon="computer-desktop" title="{{ __('ui.theme_system') }}" />
             </flux:radio.group>
         </div>
 
@@ -90,7 +90,7 @@ new class extends Component {
             <div class="flex items-center gap-1 ps-0.5">
                 @auth
                     <flux:button :href="route('dashboard')" variant="outline" size="sm" wire:navigate class="h-7 border-zinc-200 px-2.5 text-[12px] font-medium text-zinc-800 dark:border-zinc-700 dark:text-zinc-200">
-                        {{ __('Dashboard') }}
+                        {{ __('ui.dashboard') }}
                     </flux:button>
                 @else
                     <flux:button
@@ -100,7 +100,7 @@ new class extends Component {
                         wire:navigate
                         class="h-7 px-2 text-[12px] font-normal text-zinc-600 hover:bg-transparent hover:text-zinc-900 hover:underline dark:text-zinc-400 dark:hover:text-zinc-100"
                     >
-                        {{ __('Log in') }}
+                        {{ __('auth_ui.log_in') }}
                     </flux:button>
                     @if (Route::has('register'))
                         <flux:button
@@ -110,7 +110,7 @@ new class extends Component {
                             wire:navigate
                             class="hidden h-7 border-0 bg-zinc-900 px-3 text-[12px] font-medium text-white shadow-none hover:bg-zinc-800 sm:inline-flex dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
                         >
-                            {{ __('Register') }}
+                            {{ __('auth_ui.register') }}
                         </flux:button>
                     @endif
                 @endauth

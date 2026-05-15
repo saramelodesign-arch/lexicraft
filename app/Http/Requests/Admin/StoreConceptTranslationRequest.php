@@ -1,0 +1,75 @@
+<?php
+
+namespace App\Http\Requests\Admin;
+
+use App\Models\Language;
+use App\Support\Editorial\EditorialQualityGuard;
+use App\Support\Editorial\SlugGovernance;
+use App\Support\Editorial\WorkflowStatus;
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
+
+final class StoreConceptTranslationRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    /**
+     * @return array<string, array<int, mixed>>
+     */
+    public function rules(): array
+    {
+        return [
+            'language_id' => ['required', 'exists:languages,id'],
+            'status' => ['required', Rule::in(WorkflowStatus::all())],
+            'term' => ['required', 'string', 'max:255'],
+            'slug' => [
+                'required',
+                'string',
+                'max:'.SlugGovernance::MAX_LENGTH,
+                'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
+                Rule::unique('concept_translations', 'slug')->where(
+                    fn ($q) => $q->where('language_id', (int) $this->integer('language_id')),
+                ),
+            ],
+            'short_definition' => ['nullable', 'string'],
+            'full_definition' => ['nullable', 'string'],
+        ];
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'slug' => SlugGovernance::normalize((string) $this->input('slug')),
+        ]);
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            $language = Language::query()->find($this->integer('language_id'));
+            if ($language === null || ! $language->is_active) {
+                $validator->errors()->add('language_id', __('Choose an active language.'));
+            }
+
+            try {
+                EditorialQualityGuard::assertTranslationQuality(
+                    (string) $this->input('term'),
+                    $this->input('short_definition'),
+                    $this->input('full_definition'),
+                    [],
+                    (string) $this->input('status')
+                );
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                foreach ($e->errors() as $field => $messages) {
+                    foreach ($messages as $message) {
+                        $validator->errors()->add($field, $message);
+                    }
+                }
+            }
+        });
+    }
+}

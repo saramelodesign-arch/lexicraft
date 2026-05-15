@@ -3,34 +3,21 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreConceptTranslationRequest;
+use App\Http\Requests\Admin\UpdateConceptTranslationRequest;
 use App\Models\Concept;
 use App\Models\ConceptTranslation;
 use App\Models\Example;
 use App\Models\Language;
+use App\Support\Editorial\DuplicateDetectionService;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 
 final class ConceptTranslationController extends Controller
 {
-    public function store(Request $request, Concept $concept): RedirectResponse
+    public function store(StoreConceptTranslationRequest $request, Concept $concept): RedirectResponse
     {
-        $validated = $request->validate([
-            'language_id' => ['required', 'exists:languages,id'],
-            'term' => ['required', 'string', 'max:255'],
-            'slug' => [
-                'required',
-                'string',
-                'max:255',
-                'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
-                Rule::unique('concept_translations', 'slug')->where(
-                    fn ($q) => $q->where('language_id', (int) $request->integer('language_id')),
-                ),
-            ],
-            'short_definition' => ['nullable', 'string'],
-            'full_definition' => ['nullable', 'string'],
-        ]);
+        $validated = $request->validated();
 
         $language = Language::query()->findOrFail($validated['language_id']);
         if (! $language->is_active) {
@@ -41,9 +28,21 @@ final class ConceptTranslationController extends Controller
             return back()->withErrors(['language_id' => __('This concept already has that locale.')])->withInput();
         }
 
+        $duplicate = DuplicateDetectionService::findExactTermDuplicate(
+            (int) $validated['language_id'],
+            (string) $validated['term'],
+            ignoreConceptId: $concept->id
+        );
+        if ($duplicate !== null) {
+            return back()->withErrors([
+                'term' => __('Another concept already uses this term in that language (concept #:id).', ['id' => $duplicate->concept_id]),
+            ])->withInput();
+        }
+
         $translation = ConceptTranslation::query()->create([
             'concept_id' => $concept->id,
             'language_id' => $validated['language_id'],
+            'status' => $validated['status'],
             'term' => $validated['term'],
             'slug' => $validated['slug'],
             'short_definition' => $validated['short_definition'] ?? null,
@@ -64,39 +63,27 @@ final class ConceptTranslationController extends Controller
             ->with('status', __('Translation added.'));
     }
 
-    public function update(Request $request, Concept $concept, ConceptTranslation $translation): RedirectResponse
+    public function update(UpdateConceptTranslationRequest $request, Concept $concept, ConceptTranslation $translation): RedirectResponse
     {
         abort_unless($translation->concept_id === $concept->id, 404);
 
-        $validated = $request->validate([
-            'term' => ['required', 'string', 'max:255'],
-            'slug' => [
-                'required',
-                'string',
-                'max:255',
-                'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
-                Rule::unique('concept_translations', 'slug')
-                    ->where(fn ($q) => $q->where('language_id', $translation->language_id))
-                    ->ignore($translation->id),
-            ],
-            'short_definition' => ['nullable', 'string'],
-            'full_definition' => ['nullable', 'string'],
-            'seo_title' => ['nullable', 'string', 'max:255'],
-            'seo_description' => ['nullable', 'string'],
-            'meta_keywords' => ['nullable', 'string'],
-            'industry_notes' => ['nullable', 'string'],
-            'seo_canonical_url' => ['nullable', 'string', 'max:2048', 'url'],
-            'og_title' => ['nullable', 'string', 'max:512'],
-            'og_description' => ['nullable', 'string'],
-            'examples' => ['nullable', 'array'],
-            'examples.*.id' => ['nullable', 'integer'],
-            'examples.*.example' => ['nullable', 'string'],
-            'examples.*.context' => ['nullable', 'string', 'max:64'],
-            'examples.*.sort_order' => ['nullable', 'integer', 'min:0', 'max:65535'],
-        ]);
+        $validated = $request->validated();
+
+        $duplicate = DuplicateDetectionService::findExactTermDuplicate(
+            $translation->language_id,
+            (string) $validated['term'],
+            ignoreTranslationId: $translation->id,
+            ignoreConceptId: $concept->id,
+        );
+        if ($duplicate !== null) {
+            return back()->withErrors([
+                'term' => __('Another concept already uses this term in that language (concept #:id).', ['id' => $duplicate->concept_id]),
+            ])->withInput();
+        }
 
         DB::transaction(function () use ($validated, $request, $translation): void {
             $translation->update([
+                'status' => $validated['status'],
                 'term' => $validated['term'],
                 'slug' => $validated['slug'],
                 'short_definition' => $validated['short_definition'] ?? null,

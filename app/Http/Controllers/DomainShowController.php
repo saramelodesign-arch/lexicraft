@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Domain;
 use App\Models\DomainTranslation;
 use App\Models\Language;
+use App\Support\Editorial\WorkflowStatus;
 use App\Support\Locales;
 use App\Support\Seo\StructuredData;
 use Illuminate\Contracts\View\View;
@@ -39,16 +40,16 @@ final class DomainShowController extends Controller
                 'translations' => fn ($t) => $t->where('language_id', $languageId),
             ])->withCount([
                 'concepts as terms_count' => function ($q2) use ($languageId): void {
-                    $q2->where('concepts.status', 'published')
-                        ->whereHas('translations', fn ($t) => $t->where('language_id', $languageId));
+                    $q2->where('concepts.status', WorkflowStatus::PUBLISHED)
+                        ->whereHas('translations', fn ($t) => $t->where('language_id', $languageId)->where('status', WorkflowStatus::PUBLISHED));
                 },
             ]),
         ]);
 
         $domain->loadCount([
             'concepts as terms_count' => function ($q) use ($languageId): void {
-                $q->where('concepts.status', 'published')
-                    ->whereHas('translations', fn ($t) => $t->where('language_id', $languageId));
+                $q->where('concepts.status', WorkflowStatus::PUBLISHED)
+                    ->whereHas('translations', fn ($t) => $t->where('language_id', $languageId)->where('status', WorkflowStatus::PUBLISHED));
             },
         ]);
 

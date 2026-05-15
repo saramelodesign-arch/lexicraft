@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\User;
 use App\Support\Locales;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\Test;
@@ -24,6 +25,20 @@ class LocaleRoutingTest extends TestCase
         $this->withSession(['locale' => 'pt'])
             ->get('/')
             ->assertRedirect(route('home', ['locale' => 'pt']));
+    }
+
+    #[Test]
+    public function root_redirects_using_authenticated_user_preferred_locale_first(): void
+    {
+        $user = User::factory()->create([
+            'preferred_locale' => 'fr',
+        ]);
+
+        $this->actingAs($user)
+            ->withSession(['locale' => 'de'])
+            ->withCookie('locale', 'it')
+            ->get('/')
+            ->assertRedirect(route('home', ['locale' => 'fr']));
     }
 
     #[Test]
@@ -55,5 +70,17 @@ class LocaleRoutingTest extends TestCase
             ->assertOk()
             ->assertViewHas('letter', 'M')
             ->assertViewHas('locale', 'fr');
+    }
+
+    #[Test]
+    public function authenticated_users_are_redirected_to_their_preferred_locale_prefix(): void
+    {
+        $user = User::factory()->create([
+            'preferred_locale' => 'pt',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('home', ['locale' => 'en']))
+            ->assertRedirect(route('home', ['locale' => 'pt']));
     }
 }

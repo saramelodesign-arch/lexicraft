@@ -13,6 +13,7 @@
                 <select name="status" class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-900">
                     <option value="">{{ __('Any') }}</option>
                     <option value="draft" @selected($filters['status'] === 'draft')>{{ __('Draft') }}</option>
+                    <option value="review" @selected($filters['status'] === 'review')>{{ __('Review') }}</option>
                     <option value="published" @selected($filters['status'] === 'published')>{{ __('Published') }}</option>
                     <option value="archived" @selected($filters['status'] === 'archived')>{{ __('Archived') }}</option>
                 </select>
@@ -51,7 +52,9 @@
                     <th class="px-4 py-3">{{ __('ID') }}</th>
                     <th class="px-4 py-3">{{ __('Status') }}</th>
                     <th class="px-4 py-3">{{ __('Coverage') }}</th>
+                    <th class="px-4 py-3">{{ __('Published locales') }}</th>
                     <th class="px-4 py-3">{{ __('Labels') }}</th>
+                    <th class="px-4 py-3">{{ __('Warnings') }}</th>
                     <th class="px-4 py-3">{{ __('Updated') }}</th>
                 </tr>
             </thead>
@@ -66,9 +69,21 @@
                             {{ $concept->translations_count }} / {{ $languages->count() }}
                         </td>
                         <td class="px-4 py-3">
+                            {{ $concept->published_translations_count }} / {{ $languages->count() }}
+                        </td>
+                        <td class="px-4 py-3">
                             <flux:link :href="route('admin.concepts.edit', $concept)" wire:navigate class="font-medium">
                                 {{ $concept->translations->pluck('term')->take(3)->join(' · ') ?: '—' }}
                             </flux:link>
+                        </td>
+                        <td class="px-4 py-3 text-xs text-zinc-500">
+                            @if ($concept->status === 'published' && $concept->published_translations_count === 0)
+                                {{ __('No published translation') }}
+                            @elseif ($concept->translations_count < $languages->count())
+                                {{ __('Missing locales') }}
+                            @else
+                                —
+                            @endif
                         </td>
                         <td class="whitespace-nowrap px-4 py-3 text-zinc-500">{{ $concept->updated_at?->diffForHumans() }}</td>
                     </tr>

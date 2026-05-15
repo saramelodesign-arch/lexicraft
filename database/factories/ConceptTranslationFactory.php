@@ -22,6 +22,7 @@ class ConceptTranslationFactory extends Factory
         return [
             'concept_id' => Concept::factory(),
             'language_id' => Language::factory(),
+            'status' => 'draft',
             'term' => $term,
             'slug' => Str::slug($term).'-'.fake()->unique()->numerify('####'),
             'short_definition' => fake()->optional()->sentence(),

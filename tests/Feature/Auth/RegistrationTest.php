@@ -31,11 +31,13 @@ class RegistrationTest extends TestCase
             'email' => 'test@example.com',
             'password' => 'password',
             'password_confirmation' => 'password',
+            'preferred_locale' => 'pt',
         ]);
 
         $response->assertSessionHasNoErrors()
             ->assertRedirect(route('dashboard', absolute: false));
 
         $this->assertAuthenticated();
+        $this->assertSame('pt', auth()->user()->preferred_locale);
     }
 }

@@ -4,6 +4,7 @@ namespace App\Support;
 
 use App\Models\Concept;
 use App\Models\ConceptTranslation;
+use App\Support\Editorial\WorkflowStatus;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 
@@ -87,7 +88,7 @@ final class SemanticGraph
 
             /** @var ConceptTranslation|null $tr */
             $tr = $peer->translations->firstWhere('language_id', $languageId);
-            if ($tr === null) {
+            if ($tr === null || $tr->status !== WorkflowStatus::PUBLISHED) {
                 return;
             }
 
@@ -192,8 +193,8 @@ final class SemanticGraph
             ->where('status', 'published')
             ->whereKeyNot($exclude)
             ->whereHas('domains', fn ($q) => $q->whereIn('domains.id', $domainIds))
-            ->whereHas('translations', fn ($q) => $q->where('language_id', $languageId))
-            ->with(['translations' => fn ($q) => $q->where('language_id', $languageId)])
+            ->whereHas('translations', fn ($q) => $q->where('language_id', $languageId)->where('status', WorkflowStatus::PUBLISHED))
+            ->with(['translations' => fn ($q) => $q->where('language_id', $languageId)->where('status', WorkflowStatus::PUBLISHED)])
             ->withCount([
                 'domains as shared_domain_count' => fn ($q) => $q->whereIn('domains.id', $domainIds),
             ])
@@ -203,7 +204,9 @@ final class SemanticGraph
             ->get();
 
         return $rows
-            ->map(fn (Concept $c) => $c->translations->firstWhere('language_id', $languageId))
+            ->map(fn (Concept $c) => $c->translations
+                ->where('language_id', $languageId)
+                ->firstWhere('status', WorkflowStatus::PUBLISHED))
             ->filter()
             ->values();
     }

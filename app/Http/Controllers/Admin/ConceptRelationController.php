@@ -3,26 +3,21 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreConceptRelationRequest;
 use App\Models\Concept;
 use App\Models\ConceptRelation;
 use App\Models\ConceptTranslation;
 use App\Models\Language;
-use App\Support\Locales;
+use App\Support\Editorial\SemanticRelationGuard;
 use App\Support\SemanticGraph;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 final class ConceptRelationController extends Controller
 {
-    public function store(Request $request, Concept $concept): RedirectResponse
+    public function store(StoreConceptRelationRequest $request, Concept $concept): RedirectResponse
     {
-        $validated = $request->validate([
-            'relation_type' => ['required', 'string', Rule::in(SemanticGraph::STORED_TYPES)],
-            'related_locale' => ['required', 'string', Rule::in(Locales::codes())],
-            'related_slug' => ['required', 'string', 'max:255'],
-        ]);
+        $validated = $request->validated();
 
         SemanticGraph::assertAllowedStoredType($validated['relation_type']);
 
@@ -48,11 +43,20 @@ final class ConceptRelationController extends Controller
         }
 
         try {
+            SemanticRelationGuard::assertCanCreate((int) $concept->id, $relatedConceptId, $validated['relation_type']);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()->withErrors($e->errors())->withInput();
+        }
+
+        try {
             ConceptRelation::query()->create([
                 'concept_id' => $concept->id,
                 'related_concept_id' => $relatedConceptId,
                 'relation_type' => $validated['relation_type'],
             ]);
+            if ($validated['relation_type'] === 'synonym') {
+                SemanticRelationGuard::ensureSynonymIsSymmetric((int) $concept->id, $relatedConceptId);
+            }
         } catch (QueryException) {
             return back()->withErrors(['relation_type' => __('That relation already exists.')])->withInput();
         }

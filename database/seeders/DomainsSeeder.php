@@ -35,6 +35,20 @@ class DomainsSeeder extends Seeder
                 ],
             ],
             [
+                'slug' => 'footwear-construction',
+                'parent_slug' => 'footwear',
+                'sort_order' => 11,
+                'icon' => 'hammer',
+                'translations' => [
+                    'en' => ['name' => 'Footwear Construction', 'description' => 'Industrial construction workflow from upper assembly through lasting, bottoming, bonding, and inline quality release.'],
+                    'pt' => ['name' => 'Construção de Calçado', 'description' => 'Fluxo industrial de construção desde o fecho do cabedal até moldação, montagem de fundo, colagem e libertação de qualidade em linha.'],
+                    'fr' => ['name' => 'Construction de Chaussure', 'description' => 'Flux industriel de construction de la tige au montage sur forme, bottoming, collage et libération qualité en ligne.'],
+                    'de' => ['name' => 'Schuhkonstruktion', 'description' => 'Industrieller Konstruktionsfluss von Schaftmontage über Aufziehen, Bottoming, Verklebung bis zur Inline-Qualitätsfreigabe.'],
+                    'it' => ['name' => 'Costruzione Calzaturiera', 'description' => 'Flusso industriale dalla costruzione tomaia al montaggio su forma, fondo, incollaggio e rilascio qualità in linea.'],
+                    'es' => ['name' => 'Construcción de Calzado', 'description' => 'Flujo industrial desde ensamblaje del corte hasta montado, fondo, pegado y liberación de calidad en línea.'],
+                ],
+            ],
+            [
                 'slug' => 'leather-goods',
                 'parent_slug' => null,
                 'sort_order' => 20,

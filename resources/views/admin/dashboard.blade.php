@@ -5,7 +5,7 @@
 @endsection
 
 @section('content')
-    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <flux:card class="p-5">
             <flux:text class="text-[11px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{{ __('Published concepts') }}</flux:text>
             <flux:heading size="xl" class="mt-1">{{ number_format($publishedConcepts) }}</flux:heading>
@@ -13,6 +13,10 @@
         <flux:card class="p-5">
             <flux:text class="text-[11px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{{ __('Draft concepts') }}</flux:text>
             <flux:heading size="xl" class="mt-1">{{ number_format($draftConcepts) }}</flux:heading>
+        </flux:card>
+        <flux:card class="p-5">
+            <flux:text class="text-[11px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{{ __('In review') }}</flux:text>
+            <flux:heading size="xl" class="mt-1">{{ number_format($reviewConcepts) }}</flux:heading>
         </flux:card>
         <flux:card class="p-5">
             <flux:text class="text-[11px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{{ __('Archived') }}</flux:text>

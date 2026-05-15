@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Support\ConceptSearchDocument;
+use App\Support\Editorial\WorkflowStatus;
 use App\Support\GlossaryLetterSql;
 use App\Support\Locales;
 use App\Support\SearchHighlighter;
@@ -25,6 +26,20 @@ class ConceptTranslation extends Model
     use Searchable;
 
     protected $guarded = [];
+
+    protected static function booted(): void
+    {
+        static::creating(function (ConceptTranslation $translation): void {
+            if (WorkflowStatus::isValid((string) $translation->status)) {
+                return;
+            }
+
+            $conceptStatus = Concept::query()->whereKey($translation->concept_id)->value('status');
+            $translation->status = is_string($conceptStatus) && WorkflowStatus::isPublic($conceptStatus)
+                ? WorkflowStatus::PUBLISHED
+                : WorkflowStatus::DRAFT;
+        });
+    }
 
     public function concept(): BelongsTo
     {
@@ -59,7 +74,11 @@ class ConceptTranslation extends Model
     {
         $this->loadMissing('concept:id,status', 'language:id,is_active');
 
-        if ($this->concept?->status !== 'published') {
+        if ($this->concept?->status !== WorkflowStatus::PUBLISHED) {
+            return false;
+        }
+
+        if ($this->status !== WorkflowStatus::PUBLISHED) {
             return false;
         }
 
@@ -95,7 +114,9 @@ class ConceptTranslation extends Model
      */
     protected function makeAllSearchableUsing(Builder $query): Builder
     {
-        return $query->whereHas('concept', fn (Builder $q) => $q->where('status', 'published'))
+        return $query
+            ->where('status', WorkflowStatus::PUBLISHED)
+            ->whereHas('concept', fn (Builder $q) => $q->where('status', WorkflowStatus::PUBLISHED))
             ->whereHas('language', fn (Builder $q) => $q->where('is_active', true));
     }
 
@@ -147,7 +168,8 @@ class ConceptTranslation extends Model
 
         return $query
             ->where('language_id', $languageId)
-            ->whereHas('concept', fn (Builder $q) => $q->where('status', 'published'));
+            ->where('status', WorkflowStatus::PUBLISHED)
+            ->whereHas('concept', fn (Builder $q) => $q->where('status', WorkflowStatus::PUBLISHED));
     }
 
     /**
@@ -221,7 +243,8 @@ class ConceptTranslation extends Model
 
         return $query
             ->where('language_id', $languageId)
-            ->whereHas('concept', fn (Builder $c) => $c->where('status', 'published'))
+            ->where('status', WorkflowStatus::PUBLISHED)
+            ->whereHas('concept', fn (Builder $c) => $c->where('status', WorkflowStatus::PUBLISHED))
             ->whereRaw("{$expr} = ?", [$letter]);
     }
 }

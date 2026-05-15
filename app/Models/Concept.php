@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Editorial\WorkflowStatus;
 use Database\Factories\ConceptFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -44,6 +45,9 @@ class Concept extends Model implements HasMedia
     {
         static::creating(function (Concept $concept): void {
             $concept->uuid ??= (string) Str::uuid();
+            if (! WorkflowStatus::isValid((string) $concept->status)) {
+                $concept->status = WorkflowStatus::DRAFT;
+            }
         });
 
         static::saved(function (Concept $concept): void {

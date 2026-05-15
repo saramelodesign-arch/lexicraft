@@ -3,16 +3,20 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreConceptRequest;
+use App\Http\Requests\Admin\UpdateConceptRequest;
 use App\Models\Concept;
 use App\Models\ConceptTranslation;
 use App\Models\Domain;
 use App\Models\Language;
+use App\Support\Editorial\DuplicateDetectionService;
+use App\Support\Editorial\SemanticRelationGuard;
+use App\Support\Editorial\WorkflowStatus;
 use App\Support\SemanticGraph;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 
 final class ConceptController extends Controller
 {
@@ -23,10 +27,11 @@ final class ConceptController extends Controller
 
         $query = Concept::query()
             ->with(['translations' => fn ($q) => $q->with('language')->orderBy('language_id')])
-            ->withCount('translations');
+            ->withCount('translations')
+            ->withCount(['translations as published_translations_count' => fn ($q) => $q->where('status', WorkflowStatus::PUBLISHED)]);
 
         $status = $request->string('status')->toString();
-        if ($status !== '' && in_array($status, ['draft', 'published', 'archived'], true)) {
+        if ($status !== '' && WorkflowStatus::isValid($status)) {
             $query->where('status', $status);
         }
 
@@ -77,32 +82,23 @@ final class ConceptController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(StoreConceptRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'status' => ['required', Rule::in(['draft', 'published', 'archived'])],
-            'difficulty_level' => ['nullable', 'string', 'max:64'],
-            'is_featured' => ['sometimes', 'boolean'],
-            'domain_ids' => ['nullable', 'array'],
-            'domain_ids.*' => ['integer', 'exists:domains,id'],
-            'language_id' => ['required', 'exists:languages,id'],
-            'term' => ['required', 'string', 'max:255'],
-            'slug' => [
-                'required',
-                'string',
-                'max:255',
-                'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
-                Rule::unique('concept_translations', 'slug')->where(
-                    fn ($q) => $q->where('language_id', (int) $request->integer('language_id')),
-                ),
-            ],
-            'short_definition' => ['nullable', 'string'],
-            'full_definition' => ['nullable', 'string'],
-        ]);
+        $validated = $request->validated();
 
         $language = Language::query()->findOrFail($validated['language_id']);
         if (! $language->is_active) {
             return back()->withErrors(['language_id' => __('Choose an active language.')])->withInput();
+        }
+
+        $duplicate = DuplicateDetectionService::findExactTermDuplicate(
+            (int) $validated['language_id'],
+            (string) $validated['term'],
+        );
+        if ($duplicate !== null) {
+            return back()->withErrors([
+                'term' => __('A concept translation with this term already exists in the selected language (concept #:id).', ['id' => $duplicate->concept_id]),
+            ])->withInput();
         }
 
         $concept = DB::transaction(function () use ($validated, $request): Concept {
@@ -117,6 +113,7 @@ final class ConceptController extends Controller
             ConceptTranslation::query()->create([
                 'concept_id' => $concept->id,
                 'language_id' => $validated['language_id'],
+                'status' => $validated['translation_status'] ?? $validated['status'],
                 'term' => $validated['term'],
                 'slug' => $validated['slug'],
                 'short_definition' => $validated['short_definition'] ?? null,
@@ -163,18 +160,22 @@ final class ConceptController extends Controller
             'languages' => $languages,
             'domains' => $domains,
             'relationTypes' => $relationTypes,
+            'workflowStates' => WorkflowStatus::all(),
+            'semanticWarnings' => SemanticRelationGuard::semanticWarningsForConcept($concept),
+            'translationDuplicateWarnings' => $concept->translations
+                ->mapWithKeys(fn (ConceptTranslation $translation) => [
+                    $translation->id => DuplicateDetectionService::findNearDuplicates(
+                        $translation->language_id,
+                        $translation->term,
+                        $concept->id
+                    )->take(5),
+                ]),
         ]);
     }
 
-    public function update(Request $request, Concept $concept): RedirectResponse
+    public function update(UpdateConceptRequest $request, Concept $concept): RedirectResponse
     {
-        $validated = $request->validate([
-            'status' => ['required', Rule::in(['draft', 'published', 'archived'])],
-            'difficulty_level' => ['nullable', 'string', 'max:64'],
-            'is_featured' => ['sometimes', 'boolean'],
-            'domain_ids' => ['nullable', 'array'],
-            'domain_ids.*' => ['integer', 'exists:domains,id'],
-        ]);
+        $validated = $request->validated();
 
         DB::transaction(function () use ($validated, $request, $concept): void {
             $concept->update([

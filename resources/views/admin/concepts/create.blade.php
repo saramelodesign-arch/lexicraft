@@ -13,6 +13,7 @@
                     <flux:label>{{ __('Workflow status') }}</flux:label>
                     <select name="status" required class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-900">
                         <option value="draft" @selected(old('status', 'draft') === 'draft')>{{ __('Draft') }}</option>
+                        <option value="review" @selected(old('status') === 'review')>{{ __('Review') }}</option>
                         <option value="published" @selected(old('status') === 'published')>{{ __('Published') }}</option>
                         <option value="archived" @selected(old('status') === 'archived')>{{ __('Archived') }}</option>
                     </select>
@@ -49,6 +50,15 @@
             </div>
             <flux:input name="term" value="{{ old('term') }}" :label="__('Term')" required />
             <flux:input name="slug" value="{{ old('slug') }}" :label="__('URL slug')" required placeholder="lasting" />
+            <div class="space-y-2">
+                <flux:label>{{ __('Translation status') }}</flux:label>
+                <select name="translation_status" required class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-900">
+                    <option value="draft" @selected(old('translation_status', old('status', 'draft')) === 'draft')>{{ __('Draft') }}</option>
+                    <option value="review" @selected(old('translation_status', old('status')) === 'review')>{{ __('Review') }}</option>
+                    <option value="published" @selected(old('translation_status', old('status')) === 'published')>{{ __('Published') }}</option>
+                    <option value="archived" @selected(old('translation_status', old('status')) === 'archived')>{{ __('Archived') }}</option>
+                </select>
+            </div>
             <flux:textarea name="short_definition" rows="3" :label="__('Short definition')">{{ old('short_definition') }}</flux:textarea>
             <flux:textarea name="full_definition" rows="8" :label="__('Full definition')">{{ old('full_definition') }}</flux:textarea>
 

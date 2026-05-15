@@ -7,6 +7,7 @@ use App\Models\Concept;
 use App\Models\ConceptTranslation;
 use App\Models\Domain;
 use App\Models\Language;
+use App\Support\Editorial\WorkflowStatus;
 use Illuminate\Contracts\View\View;
 
 final class DashboardController extends Controller
@@ -24,12 +25,14 @@ final class DashboardController extends Controller
                 ->count()
             : 0;
 
-        $draftConcepts = Concept::query()->where('status', 'draft')->count();
-        $publishedConcepts = Concept::query()->where('status', 'published')->count();
-        $archivedConcepts = Concept::query()->where('status', 'archived')->count();
+        $draftConcepts = Concept::query()->where('status', WorkflowStatus::DRAFT)->count();
+        $reviewConcepts = Concept::query()->where('status', WorkflowStatus::REVIEW)->count();
+        $publishedConcepts = Concept::query()->where('status', WorkflowStatus::PUBLISHED)->count();
+        $archivedConcepts = Concept::query()->where('status', WorkflowStatus::ARCHIVED)->count();
 
         $thinSeo = ConceptTranslation::query()
-            ->whereHas('concept', fn ($q) => $q->where('status', 'published'))
+            ->where('status', WorkflowStatus::PUBLISHED)
+            ->whereHas('concept', fn ($q) => $q->where('status', WorkflowStatus::PUBLISHED))
             ->where(function ($q): void {
                 $q->whereNull('seo_title')->orWhere('seo_title', '');
             })
@@ -51,6 +54,7 @@ final class DashboardController extends Controller
             'missingTranslationCount' => $missingTranslationCount,
             'draftConcepts' => $draftConcepts,
             'publishedConcepts' => $publishedConcepts,
+            'reviewConcepts' => $reviewConcepts,
             'archivedConcepts' => $archivedConcepts,
             'thinSeo' => $thinSeo,
             'domainsActive' => $domainsActive,
