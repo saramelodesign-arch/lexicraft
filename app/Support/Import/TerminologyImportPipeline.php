@@ -57,26 +57,26 @@ final class TerminologyImportPipeline
     {
         if (! WorkflowStatus::isValid($row->conceptStatus)) {
             throw ValidationException::withMessages([
-                'concept_status' => __('Invalid concept workflow status: :status', ['status' => $row->conceptStatus]),
+                'concept_status' => __('admin.msg_invalid_concept_workflow', ['status' => $row->conceptStatus]),
             ]);
         }
 
         if (! WorkflowStatus::isValid($row->translationStatus)) {
             throw ValidationException::withMessages([
-                'translation_status' => __('Invalid translation workflow status: :status', ['status' => $row->translationStatus]),
+                'translation_status' => __('admin.msg_invalid_translation_workflow', ['status' => $row->translationStatus]),
             ]);
         }
 
         if (! SlugGovernance::isSeoSafe($row->slug)) {
             throw ValidationException::withMessages([
-                'slug' => __('Slug is not SEO-safe or exceeds length limits.'),
+                'slug' => __('admin.msg_slug_not_seo_safe'),
             ]);
         }
 
         $languageId = Language::activeIdForCode($row->locale);
         if ($languageId === null) {
             throw ValidationException::withMessages([
-                'locale' => __('Unknown or inactive locale: :locale', ['locale' => $row->locale]),
+                'locale' => __('admin.msg_unknown_or_inactive_locale_with_value', ['locale' => $row->locale]),
             ]);
         }
 
@@ -92,7 +92,7 @@ final class TerminologyImportPipeline
             $exists = Domain::query()->where('slug', $slug)->where('is_active', true)->exists();
             if (! $exists) {
                 throw ValidationException::withMessages([
-                    'domains' => __('Unknown or inactive domain slug: :slug', ['slug' => $slug]),
+                    'domains' => __('admin.msg_unknown_domain_slug', ['slug' => $slug]),
                 ]);
             }
         }
@@ -100,7 +100,7 @@ final class TerminologyImportPipeline
         $duplicate = DuplicateDetectionService::findExactTermDuplicate($languageId, $row->term);
         if ($duplicate !== null && $duplicate->slug !== $row->slug) {
             throw ValidationException::withMessages([
-                'term' => __('Exact duplicate term detected in locale :locale (concept #:id).', [
+                'term' => __('admin.msg_exact_duplicate_term', [
                     'locale' => strtoupper($row->locale),
                     'id' => $duplicate->concept_id,
                 ]),
@@ -115,7 +115,7 @@ final class TerminologyImportPipeline
     {
         $languageId = Language::activeIdForCode($row->locale);
         if ($languageId === null) {
-            throw ValidationException::withMessages(['locale' => __('Locale is inactive.')]);
+            throw ValidationException::withMessages(['locale' => __('admin.msg_locale_inactive')]);
         }
 
         $translation = ConceptTranslation::query()
@@ -131,11 +131,16 @@ final class TerminologyImportPipeline
                 'full_definition' => $row->fullDefinition,
             ]);
 
-            $translation->concept()->update([
-                'status' => $row->conceptStatus,
-            ]);
+            $concept = $translation->concept;
+            if ($concept !== null) {
+                $concept->update([
+                    'status' => $row->conceptStatus,
+                ]);
+            }
 
-            $this->syncDomains($translation->concept, $row->domains);
+            if ($concept !== null) {
+                $this->syncDomains($concept, $row->domains);
+            }
 
             return 'updated_translations';
         }

@@ -12,7 +12,12 @@ class Example extends Model
     /** @use HasFactory<ExampleFactory> */
     use HasFactory;
 
-    protected $guarded = [];
+    protected $fillable = [
+        'concept_translation_id',
+        'example',
+        'context',
+        'sort_order',
+    ];
 
     public function conceptTranslation(): BelongsTo
     {

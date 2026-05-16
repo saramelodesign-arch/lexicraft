@@ -62,13 +62,6 @@ final class GlossaryConceptShowController extends Controller
         $metaDescription = Str::limit(strip_tags((string) $rawDescription), 165, '…');
 
         $canonical = route('glossary.concept', ['locale' => $locale, 'slug' => $translation->slug], absolute: true);
-        $canonicalOverride = $translation->seo_canonical_url;
-        if (is_string($canonicalOverride)) {
-            $candidate = trim($canonicalOverride);
-            if ($candidate !== '' && filter_var($candidate, FILTER_VALIDATE_URL)) {
-                $canonical = $candidate;
-            }
-        }
 
         $ogTitle = filled($translation->og_title) ? (string) $translation->og_title : null;
         $ogDescription = filled($translation->og_description)
@@ -80,6 +73,18 @@ final class GlossaryConceptShowController extends Controller
             $peer = $concept->translationForLocale($code);
             if ($peer !== null && $peer->status === WorkflowStatus::PUBLISHED) {
                 $alternates[$code] = route('glossary.concept', ['locale' => $code, 'slug' => $peer->slug], absolute: true);
+            }
+        }
+
+        // Canonical overrides are only accepted when they match the computed localized
+        // canonical for this page, preventing canonical/hreflang conflicts.
+        $canonicalOverride = $translation->seo_canonical_url;
+        if (is_string($canonicalOverride)) {
+            $candidate = trim($canonicalOverride);
+            if ($candidate !== '' && filter_var($candidate, FILTER_VALIDATE_URL)) {
+                if ($candidate === $canonical) {
+                    $canonical = $candidate;
+                }
             }
         }
 

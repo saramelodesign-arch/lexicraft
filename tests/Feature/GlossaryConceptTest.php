@@ -84,7 +84,7 @@ class GlossaryConceptTest extends TestCase
     }
 
     #[Test]
-    public function concept_page_respects_editorial_open_graph_and_canonical_override(): void
+    public function concept_page_keeps_localized_canonical_and_emits_open_graph_locale_metadata(): void
     {
         $en = Language::query()->create([
             'code' => 'en',
@@ -118,9 +118,11 @@ class GlossaryConceptTest extends TestCase
 
         $r = $this->get(route('glossary.concept', ['locale' => 'en', 'slug' => 'bonding']));
         $r->assertOk();
-        $r->assertSee('rel="canonical" href="https://example.test/en/glossary/bonding-canonical"', false);
+        $r->assertSee('rel="canonical" href="'.route('glossary.concept', ['locale' => 'en', 'slug' => 'bonding'], absolute: true).'"', false);
         $r->assertSee('property="og:title" content="OG bonding headline"', false);
         $r->assertSee('property="og:description" content="OG bonding summary for social cards."', false);
+        $r->assertSee('property="og:locale" content="en_US"', false);
+        $r->assertSee('property="og:locale:alternate" content="pt_PT"', false);
     }
 
     #[Test]

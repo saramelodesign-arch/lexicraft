@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Support\Locales;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -12,16 +13,25 @@ final class SearchResultsController extends Controller
         $q = mb_substr(trim($request->string('q')->toString()), 0, 200);
 
         $pageTitle = $q !== ''
-            ? __('Search: :q', ['q' => $q])
-            : __('Search');
+            ? __('seo.search_title_with_query', ['q' => $q])
+            : __('seo.search_title');
 
         $metaDescription = $q !== ''
-            ? __('LexiCraft Glossary results for ":q" in this language. Paginated definitions with domain context.', ['q' => $q])
-            : __('Search published terms, definitions, and domains in LexiCraft Glossary.');
+            ? __('seo.search_meta_with_query', ['q' => $q])
+            : __('seo.search_meta_default');
 
         $canonical = $q !== ''
             ? route('search', ['locale' => $locale, 'q' => $q], absolute: true)
             : route('search', ['locale' => $locale], absolute: true);
+
+        $alternates = [];
+        foreach (Locales::codes() as $code) {
+            $alternates[$code] = $q !== ''
+                ? route('search', ['locale' => $code, 'q' => $q], absolute: true)
+                : route('search', ['locale' => $code], absolute: true);
+        }
+
+        $xDefaultUrl = $alternates[Locales::fallback()] ?? $canonical;
 
         return view('pages.search-results', [
             'locale' => $locale,
@@ -31,6 +41,8 @@ final class SearchResultsController extends Controller
             'canonical' => $canonical,
             'ogUrl' => $canonical,
             'robotsMeta' => 'noindex,follow',
+            'alternates' => $alternates,
+            'xDefaultUrl' => $xDefaultUrl,
         ]);
     }
 }

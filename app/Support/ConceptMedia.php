@@ -28,9 +28,8 @@ final class ConceptMedia
         $alt = (string) ($row['alt'] ?? $default['alt'] ?? $title);
         $caption = (string) ($row['caption'] ?? $default['caption'] ?? '');
         $kind = isset($props['kind']) && is_string($props['kind']) ? $props['kind'] : null;
-        $embedUrl = isset($props['embed_url']) && is_string($props['embed_url']) && $props['embed_url'] !== ''
-            ? $props['embed_url']
-            : null;
+        $embedRaw = isset($props['embed_url']) && is_string($props['embed_url']) ? $props['embed_url'] : null;
+        $embedUrl = TrustedEmbedUrl::normalize($embedRaw);
 
         return [
             'title' => $title,

@@ -6,6 +6,7 @@ use App\Support\ConceptSearchDocument;
 use App\Support\Editorial\WorkflowStatus;
 use App\Support\GlossaryLetterSql;
 use App\Support\Locales;
+use App\Support\Search\QueuedSearchIndexer;
 use App\Support\SearchHighlighter;
 use Database\Factories\ConceptTranslationFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -25,7 +26,22 @@ class ConceptTranslation extends Model
 
     use Searchable;
 
-    protected $guarded = [];
+    protected $fillable = [
+        'concept_id',
+        'language_id',
+        'status',
+        'term',
+        'slug',
+        'short_definition',
+        'full_definition',
+        'seo_title',
+        'seo_description',
+        'seo_canonical_url',
+        'og_title',
+        'og_description',
+        'meta_keywords',
+        'industry_notes',
+    ];
 
     protected static function booted(): void
     {
@@ -38,6 +54,14 @@ class ConceptTranslation extends Model
             $translation->status = is_string($conceptStatus) && WorkflowStatus::isPublic($conceptStatus)
                 ? WorkflowStatus::PUBLISHED
                 : WorkflowStatus::DRAFT;
+        });
+
+        static::saved(function (ConceptTranslation $translation): void {
+            QueuedSearchIndexer::queueTranslation((int) $translation->id);
+        });
+
+        static::deleted(function (ConceptTranslation $translation): void {
+            QueuedSearchIndexer::queueTranslation((int) $translation->id);
         });
     }
 
@@ -185,42 +209,100 @@ class ConceptTranslation extends Model
             return $query->whereRaw('1 = 0');
         }
 
-        $pattern = '%'.addcslashes($needle, '%_\\').'%';
+        $tokens = self::searchTokens($needle);
+        if ($tokens === []) {
+            return $query->whereRaw('1 = 0');
+        }
 
-        return $query->where(function (Builder $w) use ($pattern, $languageId): void {
-            $w->where('term', 'like', $pattern)
-                ->orWhere('slug', 'like', $pattern)
-                ->orWhere('short_definition', 'like', $pattern)
-                ->orWhere('full_definition', 'like', $pattern)
-                ->orWhere('seo_title', 'like', $pattern)
-                ->orWhere('seo_description', 'like', $pattern)
-                ->orWhere('industry_notes', 'like', $pattern)
-                ->orWhereHas('concept.domains.translations', function (Builder $dt) use ($pattern, $languageId): void {
-                    $dt->where('language_id', $languageId)
-                        ->where(function (Builder $d2) use ($pattern): void {
-                            $d2->where('name', 'like', $pattern)
-                                ->orWhere('description', 'like', $pattern);
+        $prefixPattern = self::prefixPattern($tokens[0]);
+        $containsPattern = self::containsPattern($needle);
+        $relationPattern = self::containsPattern($tokens[0]);
+        $isPostgres = $query->getConnection()->getDriverName() === 'pgsql';
+        $operator = $isPostgres ? 'ILIKE' : 'LIKE';
+
+        return $query->where(function (Builder $w) use ($containsPattern, $isPostgres, $languageId, $needle, $operator, $prefixPattern, $relationPattern, $tokens): void {
+            // Fast path first: prefix matches on indexed short fields.
+            $w->where('term', $operator, $prefixPattern)
+                ->orWhere('slug', $operator, $prefixPattern);
+
+            if ($isPostgres) {
+                $w->orWhereRaw(
+                    "to_tsvector('simple', concat_ws(' ', coalesce(term, ''), coalesce(short_definition, ''), coalesce(full_definition, ''), coalesce(seo_title, ''), coalesce(seo_description, ''), coalesce(industry_notes, ''))) @@ plainto_tsquery('simple', ?)",
+                    [$needle],
+                );
+            } else {
+                // Keep wildcard fallback narrower to avoid full-table wildcard chains.
+                $w->orWhere('short_definition', 'LIKE', $containsPattern)
+                    ->orWhere('seo_title', 'LIKE', $containsPattern)
+                    ->orWhere('industry_notes', 'LIKE', $containsPattern);
+            }
+
+            if (mb_strlen($needle) < 4) {
+                return;
+            }
+
+            $w->orWhereHas('concept.domains.translations', function (Builder $dt) use ($languageId, $operator, $relationPattern): void {
+                $dt->where('language_id', $languageId)
+                    ->where(function (Builder $d2) use ($operator, $relationPattern): void {
+                        $d2->where('name', $operator, $relationPattern)
+                            ->orWhere('description', $operator, $relationPattern);
+                    });
+            });
+
+            if (count($tokens) > 4) {
+                return;
+            }
+
+            $w->orWhereHas('concept.outgoingRelations', function (Builder $rel) use ($languageId, $operator, $relationPattern): void {
+                $rel->whereHas('relatedConcept.translations', function (Builder $tr) use ($languageId, $operator, $relationPattern): void {
+                    $tr->where('language_id', $languageId)
+                        ->where('status', WorkflowStatus::PUBLISHED)
+                        ->whereHas('concept', fn (Builder $cq) => $cq->where('status', WorkflowStatus::PUBLISHED))
+                        ->where(function (Builder $t2) use ($operator, $relationPattern): void {
+                            $t2->where('term', $operator, $relationPattern)
+                                ->orWhere('short_definition', $operator, $relationPattern);
                         });
-                })
-                ->orWhereHas('concept.outgoingRelations', function (Builder $rel) use ($pattern, $languageId): void {
-                    $rel->whereHas('relatedConcept.translations', function (Builder $tr) use ($pattern, $languageId): void {
-                        $tr->where('language_id', $languageId)
-                            ->where(function (Builder $t2) use ($pattern): void {
-                                $t2->where('term', 'like', $pattern)
-                                    ->orWhere('short_definition', 'like', $pattern);
-                            });
-                    });
-                })
-                ->orWhereHas('concept.incomingRelations', function (Builder $rel) use ($pattern, $languageId): void {
-                    $rel->whereHas('concept.translations', function (Builder $tr) use ($pattern, $languageId): void {
-                        $tr->where('language_id', $languageId)
-                            ->where(function (Builder $t2) use ($pattern): void {
-                                $t2->where('term', 'like', $pattern)
-                                    ->orWhere('short_definition', 'like', $pattern);
-                            });
-                    });
                 });
+            })->orWhereHas('concept.incomingRelations', function (Builder $rel) use ($languageId, $operator, $relationPattern): void {
+                $rel->whereHas('concept.translations', function (Builder $tr) use ($languageId, $operator, $relationPattern): void {
+                    $tr->where('language_id', $languageId)
+                        ->where('status', WorkflowStatus::PUBLISHED)
+                        ->whereHas('concept', fn (Builder $cq) => $cq->where('status', WorkflowStatus::PUBLISHED))
+                        ->where(function (Builder $t2) use ($operator, $relationPattern): void {
+                            $t2->where('term', $operator, $relationPattern)
+                                ->orWhere('short_definition', $operator, $relationPattern);
+                        });
+                });
+            });
         });
+    }
+
+    private static function containsPattern(string $value): string
+    {
+        return '%'.addcslashes($value, '%_\\').'%';
+    }
+
+    private static function prefixPattern(string $value): string
+    {
+        return addcslashes($value, '%_\\').'%';
+    }
+
+    /**
+     * @return list<string>
+     */
+    private static function searchTokens(string $needle): array
+    {
+        $parts = preg_split('/\s+/u', mb_strtolower(trim($needle)));
+        if (! is_array($parts)) {
+            return [];
+        }
+
+        $tokens = array_values(array_filter(array_map(
+            static fn (string $part): string => preg_replace('/[^\p{L}\p{N}_-]+/u', '', $part) ?? '',
+            $parts,
+        ), static fn (string $token): bool => mb_strlen($token) >= 2));
+
+        return array_slice($tokens, 0, 5);
     }
 
     /**

@@ -84,7 +84,7 @@
                         type="submit"
                         class="w-full"
                     >
-                        {{ __('Continue') }}
+                        {{ __('messages.continue') }}
                     </flux:button>
                 </div>
 

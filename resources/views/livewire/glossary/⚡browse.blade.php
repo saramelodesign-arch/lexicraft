@@ -49,9 +49,9 @@ new class extends Component
 }; ?>
 
 <div class="space-y-8">
-    <nav class="space-y-2" aria-label="{{ __('Glossary alphabet') }}">
+    <nav class="space-y-2" aria-label="{{ __('search.glossary_alphabet') }}">
         <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500 dark:text-zinc-400">
-            {{ __('Browse by letter') }}
+            {{ __('ui.browse_by_letter') }}
         </p>
         <div class="flex flex-wrap gap-1.5">
             @foreach ($alphabet as $l)
@@ -79,7 +79,7 @@ new class extends Component
         <div class="flex flex-wrap items-end justify-between gap-3 border-b border-zinc-200/90 pb-4 dark:border-zinc-800">
             <div>
                 <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500 dark:text-zinc-400">
-                    {{ __('Current letter') }}
+                    {{ __('search.current_letter') }}
                 </p>
                 <h2 id="glossary-letter-heading" class="mt-1 text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
                     {{ $letter }}
@@ -87,16 +87,16 @@ new class extends Component
             </div>
             <p class="text-[12px] tabular-nums text-zinc-500 dark:text-zinc-400">
                 @if ($this->terms->total() === 1)
-                    {{ __('1 term') }}
+                    {{ __('search.one_term') }}
                 @else
-                    {{ __(':count terms', ['count' => $this->terms->total()]) }}
+                    {{ __('search.count_terms', ['count' => $this->terms->total()]) }}
                 @endif
             </p>
         </div>
 
         @if ($this->terms->isEmpty())
             <p class="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-                {{ __('No published terms for this letter in the selected language yet.') }}
+                {{ __('search.no_terms_for_letter') }}
             </p>
         @else
             <ul class="divide-y divide-zinc-200/90 dark:divide-zinc-800" role="list">

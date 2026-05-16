@@ -4,7 +4,13 @@
         @include('partials.head')
     </head>
     <body class="min-h-screen bg-white antialiased dark:bg-linear-to-b dark:from-neutral-950 dark:to-neutral-900">
-        <div class="relative grid h-dvh flex-col items-center justify-center px-8 sm:px-0 lg:max-w-none lg:grid-cols-2 lg:px-0">
+        <a
+            href="#content"
+            class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-zinc-900 focus:px-3 focus:py-2 focus:text-xs focus:font-semibold focus:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-zinc-400 dark:focus:bg-zinc-100 dark:focus:text-zinc-900 dark:focus-visible:ring-zinc-500"
+        >
+            {{ __('ui.skip_to_content') }}
+        </a>
+        <main id="content" tabindex="-1" class="relative grid h-dvh flex-col items-center justify-center px-8 sm:px-0 lg:max-w-none lg:grid-cols-2 lg:px-0">
             <div class="bg-muted relative hidden h-full flex-col p-10 text-white lg:flex dark:border-e dark:border-neutral-800">
                 <div class="absolute inset-0 bg-neutral-900"></div>
                 <a href="{{ \App\Support\Locales::homeUrl() }}" class="relative z-20 flex items-center text-lg font-medium" wire:navigate>
@@ -37,7 +43,7 @@
                     {{ $slot }}
                 </div>
             </div>
-        </div>
+        </main>
 
         @persist('toast')
             <flux:toast.group>

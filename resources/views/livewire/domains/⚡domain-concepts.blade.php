@@ -42,10 +42,10 @@ new class extends Component
 
 <div class="space-y-4">
     @if ($this->languageId === null)
-        <p class="text-sm text-zinc-600 dark:text-zinc-400">{{ __('Language not available.') }}</p>
+        <p class="text-sm text-zinc-600 dark:text-zinc-400">{{ __('search.language_not_available') }}</p>
     @elseif ($this->concepts->isEmpty())
         <p class="rounded-lg border border-dashed border-zinc-200/90 bg-zinc-50/80 px-3 py-6 text-center text-[13px] text-zinc-600 dark:border-zinc-700 dark:bg-zinc-900/40 dark:text-zinc-400" role="status">
-            {{ __('No published concepts in this language are tagged with this domain yet.') }}
+            {{ __('search.no_published_concepts_for_domain') }}
         </p>
     @else
         <ul class="divide-y divide-zinc-200/90 dark:divide-zinc-800" role="list">

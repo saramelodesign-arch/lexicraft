@@ -2,13 +2,13 @@
 
 return [
     'required' => 'Das Feld :attribute ist erforderlich.',
-    'email' => 'Das Feld :attribute muss eine gueltige E-Mail-Adresse sein.',
+    'email' => 'Das Feld :attribute muss eine gültige E-Mail-Adresse sein.',
     'string' => 'Das Feld :attribute muss eine Zeichenkette sein.',
     'max' => [
-        'string' => 'Das Feld :attribute darf nicht groesser als :max Zeichen sein.',
+        'string' => 'Das Feld :attribute darf nicht größer als :max Zeichen sein.',
     ],
-    'confirmed' => 'Die Bestaetigung von :attribute stimmt nicht ueberein.',
-    'in' => 'Der ausgewaehlte Wert fuer :attribute ist ungueltig.',
+    'confirmed' => 'Die Bestätigung von :attribute stimmt nicht überein.',
+    'in' => 'Der ausgewählte Wert für :attribute ist ungültig.',
     'attributes' => [
         'name' => 'Name',
         'email' => 'E-Mail',

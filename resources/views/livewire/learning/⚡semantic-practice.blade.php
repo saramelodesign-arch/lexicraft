@@ -148,10 +148,10 @@ new class extends Component
             }
 
             $prompt = match ($bucket) {
-                'synonym' => __('Which term is a semantic synonym of “:term”?', ['term' => $anchor->term]),
-                'broader' => __('Which term is broader than “:term”?', ['term' => $anchor->term]),
-                'narrower' => __('Which term is narrower than “:term”?', ['term' => $anchor->term]),
-                default => __('Which related term fits best with “:term”?', ['term' => $anchor->term]),
+                'synonym' => __('learning.prompt_semantic_synonym', ['term' => $anchor->term]),
+                'broader' => __('learning.prompt_semantic_broader', ['term' => $anchor->term]),
+                'narrower' => __('learning.prompt_semantic_narrower', ['term' => $anchor->term]),
+                default => __('learning.prompt_related_term', ['term' => $anchor->term]),
             };
 
             return [
@@ -194,26 +194,28 @@ new class extends Component
 
 <div class="space-y-6">
     @if ($languageId === null)
-        <p class="text-sm text-zinc-600 dark:text-zinc-400">{{ __('Locale unavailable for semantic practice.') }}</p>
+        <p class="text-sm text-zinc-600 dark:text-zinc-400">{{ __('learning.locale_unavailable_semantic') }}</p>
     @elseif ($prompt === null)
         <p class="text-sm text-zinc-600 dark:text-zinc-400">
-            {{ __('Add more published concepts with semantic relations to enable this flow.') }}
+            {{ __('learning.add_more_semantic_data') }}
         </p>
     @else
         @if ($bucket)
             <p class="text-[11px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                {{ __('Semantic drill') }} — {{ $bucket }}
+                {{ __('learning.semantic_drill') }} — {{ $bucket }}
             </p>
         @endif
         <p class="text-sm font-medium text-zinc-900 dark:text-zinc-100">{{ $prompt }}</p>
 
-        <div class="space-y-2">
+        <div class="space-y-2" role="radiogroup" aria-label="{{ __('learning.check_answer') }}">
             @foreach ($choices as $c)
                 <button
                     type="button"
                     wire:click="pick('{{ $c['key'] }}')"
+                    role="radio"
+                    aria-checked="{{ $selectedKey === $c['key'] ? 'true' : 'false' }}"
                     class="w-full rounded-lg border px-4 py-3 text-left text-sm transition-colors
-                        {{ $selectedKey === $c['key'] ? 'border-zinc-900 bg-zinc-50 dark:border-zinc-300 dark:bg-zinc-800' : 'border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-950' }}"
+                        {{ $selectedKey === $c['key'] ? 'border-zinc-900 bg-zinc-50 dark:border-zinc-300 dark:bg-zinc-800' : 'border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-950' }} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 dark:focus-visible:ring-zinc-500 dark:focus-visible:ring-offset-zinc-950"
                 >
                     {{ $c['label'] }}
                 </button>
@@ -222,18 +224,20 @@ new class extends Component
 
         <div class="flex flex-wrap gap-3">
             <flux:button type="button" variant="primary" wire:click="check" :disabled="$selectedKey === null || $graded !== null">
-                {{ __('Check answer') }}
+                {{ __('learning.check_answer') }}
             </flux:button>
             <flux:button type="button" variant="ghost" wire:click="newRound">
-                {{ __('New prompt') }}
+                {{ __('learning.new_prompt') }}
             </flux:button>
         </div>
 
         @if ($graded !== null)
             <div
+                role="status"
+                aria-live="polite"
                 class="rounded-lg border p-4 text-sm {{ $graded ? 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-100' : 'border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-100' }}"
             >
-                {{ $graded ? __('Correct — relation aligns with the semantic graph.') : __('Incorrect — review the glossary graph for this term.') }}
+                {{ $graded ? __('learning.correct_relation') : __('learning.incorrect_relation') }}
             </div>
         @endif
     @endif

@@ -9,11 +9,14 @@ use App\Models\Domain;
 use App\Models\Language;
 use App\Support\Editorial\WorkflowStatus;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Facades\Gate;
 
 final class DashboardController extends Controller
 {
     public function __invoke(): View
     {
+        Gate::authorize('editorial.dashboard.view');
+
         $activeLanguageCount = Language::query()->where('is_active', true)->count();
 
         $missingTranslationCount = $activeLanguageCount > 0

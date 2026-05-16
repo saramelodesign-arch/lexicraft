@@ -14,7 +14,14 @@ class Quiz extends Model
     /** @use HasFactory<QuizFactory> */
     use HasFactory;
 
-    protected $guarded = [];
+    protected $fillable = [
+        'locale',
+        'slug',
+        'title',
+        'description',
+        'domain_id',
+        'is_published',
+    ];
 
     protected function casts(): array
     {
@@ -54,5 +61,32 @@ class Quiz extends Model
     public function scopePublished($query)
     {
         return $query->where('is_published', true);
+    }
+
+    /**
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
+    public function scopePublicForLocale($query, string $locale)
+    {
+        return $query->forLocale($locale)->published();
+    }
+
+    public static function resolvePublicBySlugOrFail(string $locale, string $slug): self
+    {
+        return static::query()
+            ->publicForLocale($locale)
+            ->where('slug', $slug)
+            ->with(['questions' => fn ($q) => $q->orderBy('sort_order')])
+            ->firstOrFail();
+    }
+
+    public static function resolvePublicByIdOrFail(string $locale, int $id): self
+    {
+        return static::query()
+            ->publicForLocale($locale)
+            ->whereKey($id)
+            ->with(['questions' => fn ($q) => $q->orderBy('sort_order')])
+            ->firstOrFail();
     }
 }

@@ -33,13 +33,7 @@ new class extends Component
         $this->quizId = $quizId;
         $this->locale = $locale;
 
-        $quiz = Quiz::query()
-            ->with(['questions' => fn ($q) => $q->orderBy('sort_order')])
-            ->findOrFail($this->quizId);
-
-        if ($quiz->locale !== $this->locale) {
-            abort(404);
-        }
+        $quiz = $this->resolvePublishedQuiz();
 
         foreach ($quiz->questions as $question) {
             if ($question->type === 'term_matching') {
@@ -54,15 +48,12 @@ new class extends Component
     #[Computed]
     public function quiz(): Quiz
     {
-        $quiz = Quiz::query()
-            ->with(['questions' => fn ($q) => $q->orderBy('sort_order')])
-            ->findOrFail($this->quizId);
+        return $this->resolvePublishedQuiz();
+    }
 
-        if ($quiz->locale !== $this->locale) {
-            abort(404);
-        }
-
-        return $quiz;
+    private function resolvePublishedQuiz(): Quiz
+    {
+        return Quiz::resolvePublicByIdOrFail($this->locale, $this->quizId);
     }
 
     public function submit(): void
@@ -140,12 +131,12 @@ new class extends Component
 <div class="space-y-10">
     @if ($submitted)
         <div class="rounded-xl border border-zinc-200 bg-zinc-50 p-6 dark:border-zinc-700 dark:bg-zinc-900/50">
-            <p class="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{{ __('Results') }}</p>
+            <p class="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{{ __('learning.results') }}</p>
             <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-                {{ __(':correct of :total correct (:score%).', ['correct' => $correctCount, 'total' => $this->quiz->questions->count(), 'score' => $scorePercent]) }}
+                {{ __('learning.correct_incorrect_summary', ['correct' => $correctCount, 'total' => $this->quiz->questions->count(), 'score' => $scorePercent]) }}
             </p>
             @guest
-                <p class="mt-2 text-xs text-zinc-500 dark:text-zinc-500">{{ __('Sign in to record quiz completions in your learning progress.') }}</p>
+                <p class="mt-2 text-xs text-zinc-500 dark:text-zinc-500">{{ __('learning.signin_to_record_progress') }}</p>
             @endguest
         </div>
     @endif
@@ -153,16 +144,16 @@ new class extends Component
     @foreach ($this->quiz->questions as $q)
         <div class="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800 sm:p-6" wire:key="q-{{ $q->id }}">
             <p class="text-[11px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                {{ __('Question :n', ['n' => $loop->iteration]) }}
+                {{ __('learning.question_number', ['n' => $loop->iteration]) }}
                 @if ($q->type === 'semantic_pick')
-                    <span class="ms-2 normal-case text-zinc-400">— {{ __('Semantic') }}</span>
+                    <span class="ms-2 normal-case text-zinc-400">— {{ __('learning.semantic') }}</span>
                 @endif
             </p>
             @if (in_array($q->type, ['multiple_choice', 'definition_pick', 'semantic_pick'], true))
                 @php $payload = $q->payload; @endphp
                 <p class="mt-2 text-sm font-medium text-zinc-900 dark:text-zinc-100">{{ $payload['prompt'] ?? '' }}</p>
                 @if (! empty($payload['relation']))
-                    <p class="mt-1 text-xs text-zinc-500">{{ __('Relation focus: :r', ['r' => $payload['relation']]) }}</p>
+                    <p class="mt-1 text-xs text-zinc-500">{{ __('learning.relation_focus', ['r' => $payload['relation']]) }}</p>
                 @endif
                 <div class="mt-4 space-y-2">
                     @foreach ($payload['choices'] ?? [] as $c)
@@ -191,7 +182,7 @@ new class extends Component
                                 wire:model="matchAnswers.{{ $q->id }}.{{ $term['i'] }}"
                                 @disabled($submitted)
                             >
-                                <option value="">{{ __('Select definition…') }}</option>
+                                <option value="">{{ __('learning.select_definition') }}</option>
                                 @foreach ($payload['definitions'] ?? [] as $def)
                                     <option value="{{ $def['i'] }}">{{ $def['text'] }}</option>
                                 @endforeach
@@ -206,11 +197,11 @@ new class extends Component
     <div class="flex flex-wrap gap-3">
         @if (! $submitted)
             <flux:button type="button" variant="primary" wire:click="submit" wire:loading.attr="disabled">
-                {{ __('Submit answers') }}
+                {{ __('learning.submit_answers') }}
             </flux:button>
         @endif
         <flux:button type="button" variant="ghost" :href="route('learning.quizzes', ['locale' => $locale])" wire:navigate>
-            {{ __('Back to quizzes') }}
+            {{ __('learning.back_to_quizzes') }}
         </flux:button>
     </div>
 </div>

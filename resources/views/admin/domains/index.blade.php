@@ -1,16 +1,16 @@
-@extends('layouts.admin', ['pageTitle' => __('Domains')])
+@extends('layouts.admin', ['pageTitle' => __('admin.domains')])
 
 @section('subhead')
-    {{ __('Hierarchical industry taxonomy; each row aggregates cross-locale slugs and concept assignments.') }}
+    {{ __('admin.domains_subhead') }}
 @endsection
 
 @section('content')
     <flux:card class="p-6">
         <form method="get" class="flex flex-wrap items-end gap-4">
-            <flux:input name="q" value="{{ $filters['q'] }}" :label="__('Search')" class="min-w-[200px]" />
-            <flux:button type="submit" variant="primary">{{ __('Search') }}</flux:button>
+            <flux:input name="q" value="{{ $filters['q'] }}" :label="__('admin.search')" class="min-w-[200px]" />
+            <flux:button type="submit" variant="primary">{{ __('admin.search') }}</flux:button>
             <flux:spacer />
-            <flux:button variant="primary" :href="route('admin.domains.create')">{{ __('New domain') }}</flux:button>
+            <flux:button variant="primary" :href="route('admin.domains.create')">{{ __('admin.new_domain') }}</flux:button>
         </form>
     </flux:card>
 
@@ -18,10 +18,10 @@
         <table class="min-w-full divide-y divide-zinc-200 text-sm dark:divide-zinc-800">
             <thead class="bg-zinc-50 text-left text-xs font-semibold uppercase text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400">
                 <tr>
-                    <th class="px-4 py-3">{{ __('Slug') }}</th>
-                    <th class="px-4 py-3">{{ __('Parent') }}</th>
-                    <th class="px-4 py-3">{{ __('Concepts') }}</th>
-                    <th class="px-4 py-3">{{ __('Locales') }}</th>
+                    <th class="px-4 py-3">{{ __('admin.url_slug') }}</th>
+                    <th class="px-4 py-3">{{ __('admin.parent') }}</th>
+                    <th class="px-4 py-3">{{ __('admin.concept_count') }}</th>
+                    <th class="px-4 py-3">{{ __('admin.locale') }}</th>
                     <th class="px-4 py-3"></th>
                 </tr>
             </thead>
@@ -33,7 +33,7 @@
                         <td class="px-4 py-3">{{ $domain->concepts_count }}</td>
                         <td class="px-4 py-3 text-xs text-zinc-500">{{ $domain->translations->pluck('language.code')->filter()->map('strtoupper')->join(', ') }}</td>
                         <td class="px-4 py-3 text-end">
-                            <flux:link :href="route('admin.domains.edit', $domain)" wire:navigate>{{ __('Edit') }}</flux:link>
+                            <flux:link :href="route('admin.domains.edit', $domain)" wire:navigate>{{ __('admin.edit') }}</flux:link>
                         </td>
                     </tr>
                 @endforeach

@@ -35,7 +35,7 @@ final class UpdateConceptRequest extends FormRequest
             $targetStatus = (string) $this->input('status');
             $domainIds = $this->input('domain_ids', []);
             if (in_array($targetStatus, [WorkflowStatus::REVIEW, WorkflowStatus::PUBLISHED], true) && (is_array($domainIds) ? count($domainIds) === 0 : true)) {
-                $validator->errors()->add('domain_ids', __('Review and published concepts must belong to at least one domain.'));
+                $validator->errors()->add('domain_ids', __('admin.msg_review_requires_domain'));
             }
 
             /** @var Concept|null $concept */
@@ -49,7 +49,7 @@ final class UpdateConceptRequest extends FormRequest
                     ->where('status', WorkflowStatus::PUBLISHED)
                     ->count();
                 if ($publishedTranslations === 0) {
-                    $validator->errors()->add('status', __('Published concepts require at least one published translation.'));
+                    $validator->errors()->add('status', __('admin.msg_published_requires_translation'));
                 }
             }
         });

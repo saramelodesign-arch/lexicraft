@@ -46,7 +46,7 @@ final class SemanticGraph
     {
         if (! self::isAllowedStoredType($type)) {
             throw ValidationException::withMessages([
-                'relation_type' => __('Unsupported concept relation type: :type', ['type' => $type]),
+                'relation_type' => __('admin.msg_unsupported_relation_type', ['type' => $type]),
             ]);
         }
     }

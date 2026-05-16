@@ -161,7 +161,7 @@ final class StructuredData
             $schema['subjectOf'] = array_map(static function (string $text): array {
                 return [
                     '@type' => 'CreativeWork',
-                    'name' => __('Example'),
+                    'name' => __('search.example'),
                     'text' => Str::limit($text, 2000),
                 ];
             }, array_slice($examplesPlain, 0, 8));
@@ -201,11 +201,11 @@ final class StructuredData
     ): array {
         $rows = [];
         $rows[] = [
-            'name' => __('Home'),
+            'name' => __('ui.home'),
             'url' => route('home', ['locale' => $locale], absolute: true),
         ];
         $rows[] = [
-            'name' => __('Industrial domains'),
+            'name' => __('search.industrial_domains'),
             'url' => route('domains.index', ['locale' => $locale], absolute: true),
         ];
 
@@ -225,7 +225,7 @@ final class StructuredData
 
         $letter = mb_strtoupper(mb_substr($translation->term, 0, 1, 'UTF-8'), 'UTF-8');
         $rows[] = [
-            'name' => __('Glossary: letter :letter', ['letter' => $letter]),
+            'name' => __('search.glossary_letter_with_letter', ['letter' => $letter]),
             'url' => route('glossary.letter', ['locale' => $locale, 'letter' => strtolower($letter)], absolute: true),
         ];
         $rows[] = [
@@ -262,11 +262,11 @@ final class StructuredData
     {
         $rows = [];
         $rows[] = [
-            'name' => __('Home'),
+            'name' => __('ui.home'),
             'url' => route('home', ['locale' => $locale], absolute: true),
         ];
         $rows[] = [
-            'name' => __('Industrial domains'),
+            'name' => __('search.industrial_domains'),
             'url' => route('domains.index', ['locale' => $locale], absolute: true),
         ];
 

@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureUserCanAccessAdmin;
 use App\Http\Middleware\ResolvePreferredLocale;
+use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SetLocaleFromRoute;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -15,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(prepend: [
+            SecurityHeaders::class,
             ResolvePreferredLocale::class,
         ]);
 

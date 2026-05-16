@@ -12,7 +12,12 @@ class QuizQuestion extends Model
     /** @use HasFactory<QuizQuestionFactory> */
     use HasFactory;
 
-    protected $guarded = [];
+    protected $fillable = [
+        'quiz_id',
+        'type',
+        'payload',
+        'sort_order',
+    ];
 
     protected function casts(): array
     {

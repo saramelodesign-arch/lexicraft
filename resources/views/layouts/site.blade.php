@@ -11,6 +11,8 @@
     'ogTitle' => null,
     'ogDescription' => null,
     'robotsMeta' => null,
+    'ogLocale' => null,
+    'ogLocaleAlternates' => [],
 ])
 
 @php
@@ -31,6 +33,13 @@
         ? (string) $ogDescription
         : ($metaDescription ?? null);
     $twitterCard = filled($ogImage) ? 'summary_large_image' : 'summary';
+    $resolvedLocale = app()->getLocale();
+    $resolvedOgLocale = filled($ogLocale)
+        ? (string) $ogLocale
+        : \App\Support\Locales::ogLocale($resolvedLocale);
+    $resolvedOgLocaleAlternates = $ogLocaleAlternates !== []
+        ? array_values(array_unique(array_map('strval', $ogLocaleAlternates)))
+        : \App\Support\Locales::ogLocaleAlternates($resolvedLocale);
 @endphp
 
 <!DOCTYPE html>
@@ -62,7 +71,10 @@
         @elseif (filled($metaDescription))
             <meta property="og:description" content="{{ $metaDescription }}">
         @endif
-        <meta property="og:locale" content="{{ str_replace('_', '-', app()->getLocale()) }}">
+        <meta property="og:locale" content="{{ $resolvedOgLocale }}">
+        @foreach ($resolvedOgLocaleAlternates as $alternateOgLocale)
+            <meta property="og:locale:alternate" content="{{ $alternateOgLocale }}">
+        @endforeach
         <meta property="og:site_name" content="{{ config('app.name') }}">
 
         @if (filled($ogImage))
@@ -92,6 +104,12 @@
         @stack('meta')
     </head>
     <body class="min-h-screen bg-zinc-50 font-[Inter,ui-sans-serif,system-ui,sans-serif] text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100">
+        <a
+            href="#content"
+            class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-zinc-900 focus:px-3 focus:py-2 focus:text-xs focus:font-semibold focus:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-zinc-400 dark:focus:bg-zinc-100 dark:focus:text-zinc-900 dark:focus-visible:ring-zinc-500"
+        >
+            {{ __('ui.skip_to_content') }}
+        </a>
         {{ $slot }}
 
         @persist('toast')

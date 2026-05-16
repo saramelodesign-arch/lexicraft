@@ -33,14 +33,14 @@
 @if ($hasAny)
     <div class="space-y-8 border-b border-zinc-200/90 pb-8 dark:border-zinc-800" data-concept-media>
         <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500 dark:text-zinc-400">
-            {{ __('Technical visuals') }}
+            {{ __('messages.media_technical_visuals') }}
         </p>
 
         @if ($featured !== null)
             @php($fm = ConceptMedia::meta($featured, $locale, $term))
             <section class="space-y-2" aria-labelledby="media-featured-heading">
                 <h2 id="media-featured-heading" class="text-[13px] font-semibold text-zinc-900 dark:text-zinc-50">
-                    {{ __('Featured image') }}
+                    {{ __('messages.media_featured_image') }}
                 </h2>
                 <figure class="overflow-hidden rounded-lg border border-zinc-200/90 bg-zinc-100/50 dark:border-zinc-800 dark:bg-zinc-900/40">
                     <div class="relative aspect-[4/3] w-full bg-zinc-200/60 dark:bg-zinc-800/60">
@@ -68,7 +68,7 @@
         @if ($galleryPhotos->isNotEmpty())
             <section class="space-y-2" aria-labelledby="media-gallery-heading">
                 <h2 id="media-gallery-heading" class="text-[13px] font-semibold text-zinc-900 dark:text-zinc-50">
-                    {{ __('Gallery') }}
+                    {{ __('messages.media_gallery') }}
                 </h2>
                 <ul class="grid grid-cols-2 gap-2 sm:grid-cols-3" role="list">
                     @foreach ($galleryPhotos as $media)
@@ -102,7 +102,7 @@
         @if ($diagrams->isNotEmpty())
             <section class="space-y-2" aria-labelledby="media-diagrams-heading">
                 <h2 id="media-diagrams-heading" class="text-[13px] font-semibold text-zinc-900 dark:text-zinc-50">
-                    {{ __('Technical diagrams') }}
+                    {{ __('messages.media_technical_diagrams') }}
                 </h2>
                 <ul class="grid grid-cols-1 gap-3 sm:grid-cols-2" role="list">
                     @foreach ($diagrams as $media)
@@ -136,7 +136,7 @@
         @if ($videos->isNotEmpty())
             <section class="space-y-2" aria-labelledby="media-videos-heading">
                 <h2 id="media-videos-heading" class="text-[13px] font-semibold text-zinc-900 dark:text-zinc-50">
-                    {{ __('Videos') }}
+                    {{ __('messages.media_videos') }}
                 </h2>
                 <div class="space-y-4">
                     @foreach ($videos as $media)
@@ -148,6 +148,8 @@
                                         src="{{ $m['embed_url'] }}"
                                         title="{{ $m['title'] }}"
                                         loading="lazy"
+                                        referrerpolicy="strict-origin-when-cross-origin"
+                                        sandbox="allow-scripts allow-same-origin allow-presentation"
                                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                         allowfullscreen
                                         class="absolute inset-0 h-full w-full border-0"
@@ -170,7 +172,7 @@
                                     >
                                 </div>
                                 <p class="border-t border-zinc-200/80 px-3 py-2 text-[11px] text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
-                                    {{ __('Poster / still frame for an embedded or offline process clip.') }}
+                                    {{ __('messages.media_poster_still') }}
                                 </p>
                             @endif
                             @if (filled($m['caption']))
@@ -187,7 +189,7 @@
         @if ($documents->isNotEmpty())
             <section class="space-y-2" aria-labelledby="media-documents-heading">
                 <h2 id="media-documents-heading" class="text-[13px] font-semibold text-zinc-900 dark:text-zinc-50">
-                    {{ __('Technical documents') }}
+                    {{ __('messages.media_documents') }}
                 </h2>
                 <ul class="divide-y divide-zinc-200/80 rounded-lg border border-zinc-200/90 dark:divide-zinc-800 dark:border-zinc-800" role="list">
                     @foreach ($documents as $media)
@@ -198,7 +200,7 @@
                                     href="{{ $media->getFullUrl() }}"
                                     download="{{ $media->file_name }}"
                                     rel="nofollow"
-                                    class="text-[13px] font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-600 dark:text-zinc-100"
+                                    class="text-[13px] font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 dark:text-zinc-100 dark:focus-visible:ring-zinc-500 dark:focus-visible:ring-offset-zinc-950"
                                 >
                                     {{ $m['title'] }}
                                 </a>

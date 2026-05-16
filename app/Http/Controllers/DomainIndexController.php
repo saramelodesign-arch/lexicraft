@@ -40,8 +40,8 @@ final class DomainIndexController extends Controller
             ->orderBy('sort_order')
             ->get();
 
-        $pageTitle = __('Industrial domains');
-        $metaDescription = __('Browse domains and published concept coverage in LexiCraft Glossary by production area.');
+        $pageTitle = __('search.industrial_domains');
+        $metaDescription = __('search.domains_meta_description');
         $canonical = route('domains.index', ['locale' => $locale], absolute: true);
 
         $alternates = [];
@@ -65,7 +65,7 @@ final class DomainIndexController extends Controller
         ];
 
         $breadcrumbRows = [
-            ['name' => __('Home'), 'url' => route('home', ['locale' => $locale], absolute: true)],
+            ['name' => __('ui.home'), 'url' => route('home', ['locale' => $locale], absolute: true)],
             ['name' => $pageTitle, 'url' => $canonical],
         ];
 

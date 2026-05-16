@@ -116,7 +116,7 @@ class ConceptMediaTest extends TestCase
             ->preservingOriginal()
             ->withCustomProperties([
                 'locales' => ['en' => ['title' => 'Process clip', 'alt' => 'Video poster', 'caption' => '']],
-                'embed_url' => 'https://www.youtube-nocookie.com/embed/placeholder',
+                'embed_url' => 'https://www.youtube.com/watch?v=placeholder',
             ])
             ->toMediaCollection(Concept::COLLECTION_VIDEOS);
 
@@ -125,7 +125,8 @@ class ConceptMediaTest extends TestCase
         $r->assertSee('Gallery', false);
         $r->assertSee('Technical diagrams', false);
         $r->assertSee('Videos', false);
-        $r->assertSee('youtube-nocookie.com/embed', false);
+        $r->assertSee('https://www.youtube.com/embed/placeholder', false);
+        $r->assertSee('sandbox="allow-scripts allow-same-origin allow-presentation"', false);
     }
 
     #[Test]

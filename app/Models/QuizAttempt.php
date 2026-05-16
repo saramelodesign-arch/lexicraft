@@ -12,7 +12,16 @@ class QuizAttempt extends Model
     /** @use HasFactory<QuizAttemptFactory> */
     use HasFactory;
 
-    protected $guarded = [];
+    protected $fillable = [
+        'user_id',
+        'quiz_id',
+        'locale',
+        'score_percent',
+        'correct_count',
+        'total_count',
+        'detail',
+        'completed_at',
+    ];
 
     protected function casts(): array
     {

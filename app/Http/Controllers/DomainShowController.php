@@ -74,12 +74,12 @@ final class DomainShowController extends Controller
                 ->values();
         }
 
-        $pageTitle = $translation->name.' — '.__('Domain');
+        $pageTitle = $translation->name.' — '.__('seo.domain_singular');
         $rawDescription = $translation->description ?? '';
         $metaDescription = Str::limit(strip_tags((string) $rawDescription), 165, '…');
         if ($metaDescription === '') {
             $metaDescription = Str::limit(
-                __('LexiCraft Glossary concepts and sub-areas under :name.', ['name' => $translation->name]),
+                __('seo.domain_meta_fallback', ['name' => $translation->name]),
                 165,
                 '…',
             );

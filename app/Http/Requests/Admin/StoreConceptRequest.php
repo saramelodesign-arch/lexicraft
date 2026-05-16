@@ -58,7 +58,7 @@ final class StoreConceptRequest extends FormRequest
         $validator->after(function (Validator $validator): void {
             $language = Language::query()->find($this->integer('language_id'));
             if ($language === null || ! $language->is_active) {
-                $validator->errors()->add('language_id', __('Choose an active language.'));
+                $validator->errors()->add('language_id', __('admin.msg_choose_active_language'));
             }
 
             $domainIds = $this->input('domain_ids', []);
@@ -66,7 +66,7 @@ final class StoreConceptRequest extends FormRequest
                 in_array((string) $this->input('status'), [WorkflowStatus::REVIEW, WorkflowStatus::PUBLISHED], true)
                 && (is_array($domainIds) ? count($domainIds) === 0 : true)
             ) {
-                $validator->errors()->add('domain_ids', __('Review and published concepts must belong to at least one domain.'));
+                $validator->errors()->add('domain_ids', __('admin.msg_review_requires_domain'));
             }
 
             try {

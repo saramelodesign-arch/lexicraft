@@ -14,14 +14,18 @@ class ConceptRelation extends Model
     /** @use HasFactory<ConceptRelationFactory> */
     use HasFactory;
 
-    protected $guarded = [];
+    protected $fillable = [
+        'concept_id',
+        'related_concept_id',
+        'relation_type',
+    ];
 
     protected static function booted(): void
     {
         static::saving(function (ConceptRelation $relation): void {
             if ($relation->concept_id === $relation->related_concept_id) {
                 throw ValidationException::withMessages([
-                    'related_concept_id' => __('A concept cannot relate to itself.'),
+                    'related_concept_id' => __('admin.msg_cannot_relate_self'),
                 ]);
             }
 

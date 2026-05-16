@@ -12,7 +12,13 @@ class Language extends Model
     /** @use HasFactory<LanguageFactory> */
     use HasFactory;
 
-    protected $guarded = [];
+    protected $fillable = [
+        'code',
+        'name',
+        'native_name',
+        'flag_icon',
+        'is_active',
+    ];
 
     /** @var array<string, int|null> */
     private static array $activeIdByCode = [];

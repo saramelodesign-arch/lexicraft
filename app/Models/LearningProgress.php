@@ -9,7 +9,14 @@ class LearningProgress extends Model
 {
     protected $table = 'learning_progress';
 
-    protected $guarded = [];
+    protected $fillable = [
+        'user_id',
+        'trackable_type',
+        'trackable_id',
+        'locale',
+        'action',
+        'meta',
+    ];
 
     protected function casts(): array
     {

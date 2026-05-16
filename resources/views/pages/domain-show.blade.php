@@ -23,18 +23,18 @@
             <article class="space-y-6">
                 <header class="space-y-3 border-b border-zinc-200/90 pb-6 dark:border-zinc-800">
                     <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500 dark:text-zinc-400">
-                        {{ __('Industrial domain') }}
+                        {{ __('search.industrial_domain') }}
                     </p>
                     <h1 class="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
                         {{ $translation->name }}
                     </h1>
                     <p class="text-[12px] tabular-nums text-zinc-500 dark:text-zinc-400">
                         @if ((int) $domain->terms_count === 0)
-                            {{ __('No published terms in this language') }}
+                            {{ __('search.no_published_terms_language') }}
                         @elseif ((int) $domain->terms_count === 1)
-                            {{ __('1 published term') }}
+                            {{ __('search.one_published_term') }}
                         @else
-                            {{ __(':count published terms', ['count' => $domain->terms_count]) }}
+                            {{ __('search.count_published_terms', ['count' => $domain->terms_count]) }}
                         @endif
                     </p>
                     @if (filled($translation->description))
@@ -47,7 +47,7 @@
                 @if ($domain->children->isNotEmpty())
                     <section aria-labelledby="subdomains-heading" class="space-y-3">
                         <h2 id="subdomains-heading" class="text-[13px] font-semibold text-zinc-900 dark:text-zinc-50">
-                            {{ __('Sub-domains') }}
+                            {{ __('search.sub_domains') }}
                         </h2>
                         <ul class="divide-y divide-zinc-200/90 rounded-lg border border-zinc-200/90 dark:divide-zinc-800 dark:border-zinc-800" role="list">
                             @foreach ($domain->children as $child)
@@ -65,11 +65,11 @@
                                         </a>
                                         <span class="text-[11px] tabular-nums text-zinc-500 dark:text-zinc-400">
                                             @if ((int) $child->terms_count === 0)
-                                                {{ __('No terms') }}
+                                                {{ __('search.no_terms') }}
                                             @elseif ((int) $child->terms_count === 1)
-                                                {{ __('1 term') }}
+                                                {{ __('search.one_term') }}
                                             @else
-                                                {{ __(':count terms', ['count' => $child->terms_count]) }}
+                                                {{ __('search.count_terms', ['count' => $child->terms_count]) }}
                                             @endif
                                         </span>
                                     </li>
@@ -82,10 +82,10 @@
                 @if ($relatedDomains->isNotEmpty())
                     <section aria-labelledby="related-domains-heading" class="space-y-3">
                         <h2 id="related-domains-heading" class="text-[13px] font-semibold text-zinc-900 dark:text-zinc-50">
-                            {{ __('Related domains') }}
+                            {{ __('search.related_domains') }}
                         </h2>
                         <p class="text-[12px] leading-relaxed text-zinc-600 dark:text-zinc-400">
-                            {{ __('Domains that co-occur on published concepts with this area.') }}
+                            {{ __('search.related_domains_description') }}
                         </p>
                         <div class="flex flex-wrap gap-1.5">
                             @foreach ($relatedDomains as $rel)
@@ -110,7 +110,7 @@
 
                 <section aria-labelledby="domain-concepts-heading" class="space-y-3">
                     <h2 id="domain-concepts-heading" class="text-[13px] font-semibold text-zinc-900 dark:text-zinc-50">
-                        {{ __('Concepts') }}
+                        {{ __('admin.concepts') }}
                     </h2>
                     <livewire:domains.domain-concepts :domain-id="$domain->id" :locale="$locale" />
                 </section>

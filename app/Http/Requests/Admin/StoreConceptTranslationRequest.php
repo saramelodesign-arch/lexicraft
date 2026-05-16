@@ -52,7 +52,7 @@ final class StoreConceptTranslationRequest extends FormRequest
         $validator->after(function (Validator $validator): void {
             $language = Language::query()->find($this->integer('language_id'));
             if ($language === null || ! $language->is_active) {
-                $validator->errors()->add('language_id', __('Choose an active language.'));
+                $validator->errors()->add('language_id', __('admin.msg_choose_active_language'));
             }
 
             try {

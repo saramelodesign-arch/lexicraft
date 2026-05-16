@@ -15,7 +15,7 @@
                 type="email"
                 required
                 autofocus
-                placeholder="email@example.com"
+                :placeholder="__('ui.email_placeholder')"
             />
 
             <flux:button variant="primary" type="submit" class="w-full" data-test="email-password-reset-link-button">

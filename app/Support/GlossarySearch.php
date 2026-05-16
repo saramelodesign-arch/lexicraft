@@ -7,22 +7,32 @@ use App\Models\Language;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\RateLimiter;
 
 /**
  * Glossary search: Meilisearch via Scout when `SCOUT_DRIVER=meilisearch`, otherwise Eloquent lexical (Phase 5).
  */
 final class GlossarySearch
 {
+    private const int MIN_QUERY_LENGTH = 2;
+
+    private const int MAX_QUERY_LENGTH = 200;
+    private const int MAX_DROPDOWN_LIMIT = 12;
+    private const int MAX_PER_PAGE = 50;
+    private const int MAX_FALLBACK_PAGE = 100;
+    private const int COUNT_SCAN_CAP = 5000;
+
     /**
      * @return Builder<ConceptTranslation>
      */
     public static function query(string $localeCode, string $needle): Builder
     {
-        $needle = trim($needle);
+        $needle = self::normalizeNeedle($needle);
         $languageId = Language::activeIdForCode($localeCode);
 
-        if ($needle === '' || $languageId === null) {
+        if (! self::isQueryableNeedle($needle) || $languageId === null || ! self::allowLookup('query')) {
             return ConceptTranslation::query()->whereRaw('1 = 0');
         }
 
@@ -36,9 +46,15 @@ final class GlossarySearch
      */
     public static function dropdown(string $localeCode, string $needle, int $limit = 8): Collection
     {
+        $needle = self::normalizeNeedle($needle);
+        $limit = self::normalizeDropdownLimit($limit);
+        if (! self::isQueryableNeedle($needle) || ! self::allowLookup('dropdown')) {
+            return collect();
+        }
+
         if (GlossaryScoutQuery::usesMeilisearch()) {
             try {
-                return self::dropdownMeilisearch($localeCode, trim($needle), $limit);
+                return self::dropdownMeilisearch($localeCode, $needle, $limit);
             } catch (\Throwable $e) {
                 Log::warning('glossary.meilisearch.dropdown_failed', [
                     'message' => $e->getMessage(),
@@ -47,14 +63,20 @@ final class GlossarySearch
             }
         }
 
-        return self::dropdownLexical($localeCode, trim($needle), $limit);
+        return self::dropdownLexical($localeCode, $needle, $limit);
     }
 
     public static function paginate(string $localeCode, string $needle, int $perPage = 15): LengthAwarePaginator
     {
+        $needle = self::normalizeNeedle($needle);
+        $perPage = self::normalizePerPage($perPage);
+        if (! self::isQueryableNeedle($needle) || ! self::allowLookup('paginate')) {
+            return self::emptyPaginator($perPage);
+        }
+
         if (GlossaryScoutQuery::usesMeilisearch()) {
             try {
-                return self::paginateMeilisearch($localeCode, trim($needle), $perPage);
+                return self::paginateMeilisearch($localeCode, $needle, $perPage);
             } catch (\Throwable $e) {
                 Log::warning('glossary.meilisearch.paginate_failed', [
                     'message' => $e->getMessage(),
@@ -63,14 +85,19 @@ final class GlossarySearch
             }
         }
 
-        return self::paginateLexical($localeCode, trim($needle), $perPage);
+        return self::paginateLexical($localeCode, $needle, $perPage);
     }
 
     public static function count(string $localeCode, string $needle): int
     {
-        if (GlossaryScoutQuery::usesMeilisearch() && trim($needle) !== '') {
+        $needle = self::normalizeNeedle($needle);
+        if (! self::isQueryableNeedle($needle) || ! self::allowLookup('count')) {
+            return 0;
+        }
+
+        if (GlossaryScoutQuery::usesMeilisearch()) {
             try {
-                return (int) ConceptTranslation::search(trim($needle))
+                return (int) ConceptTranslation::search($needle)
                     ->where('language_code', $localeCode)
                     ->where('is_published', true)
                     ->paginate(1)
@@ -80,7 +107,13 @@ final class GlossarySearch
             }
         }
 
-        return (int) self::query($localeCode, $needle)->count();
+        $capped = self::query($localeCode, $needle)
+            ->select('concept_translations.id')
+            ->limit(self::COUNT_SCAN_CAP + 1);
+
+        $count = (int) DB::query()->fromSub($capped, 'capped_glossary_search')->count();
+
+        return min($count, self::COUNT_SCAN_CAP);
     }
 
     /**
@@ -116,10 +149,7 @@ final class GlossarySearch
         $languageId = Language::activeIdForCode($localeCode);
 
         return self::ordered(self::query($localeCode, $needle), $needle)
-            ->with([
-                'language',
-                'concept.domains.translations' => fn ($q) => $q->where('language_id', Language::activeIdForCode($localeCode)),
-            ])
+            ->with(self::fallbackRelations($languageId))
             ->limit($limit)
             ->get();
     }
@@ -159,22 +189,25 @@ final class GlossarySearch
 
     private static function paginateLexical(string $localeCode, string $needle, int $perPage): LengthAwarePaginator
     {
+        $page = max(1, (int) request()->integer('page', 1));
+        if ($page > self::MAX_FALLBACK_PAGE) {
+            return self::emptyPaginator($perPage, $page);
+        }
+
         $languageId = Language::activeIdForCode($localeCode);
 
         return self::ordered(self::query($localeCode, $needle), $needle)
-            ->with([
-                'language',
-                'concept.domains.translations' => fn ($q) => $q->where('language_id', $languageId),
-            ])
+            ->with(self::fallbackRelations($languageId))
             ->paginate($perPage)
             ->withQueryString();
     }
 
-    private static function emptyPaginator(int $perPage): LengthAwarePaginator
+    private static function emptyPaginator(int $perPage, int $page = 1): LengthAwarePaginator
     {
-        return new LengthAwarePaginator([], 0, $perPage, 1, [
+        return new LengthAwarePaginator([], 0, $perPage, $page, [
             'path' => request()->url(),
             'pageName' => 'page',
+            'query' => array_filter(['q' => request()->query('q')]),
         ]);
     }
 
@@ -187,9 +220,62 @@ final class GlossarySearch
         $needle = trim($needle);
         $escaped = addcslashes($needle, '%_\\');
         $prefix = $escaped !== '' ? $escaped.'%' : '%';
+        $operator = $query->getConnection()->getDriverName() === 'pgsql' ? 'ILIKE' : 'LIKE';
 
         return $query
-            ->orderByRaw('CASE WHEN term LIKE ? THEN 0 ELSE 1 END', [$prefix])
+            ->orderByRaw("CASE WHEN term {$operator} ? THEN 0 ELSE 1 END", [$prefix])
             ->orderBy('term');
+    }
+
+    private static function normalizeNeedle(string $needle): string
+    {
+        return mb_substr(trim($needle), 0, self::MAX_QUERY_LENGTH);
+    }
+
+    private static function isQueryableNeedle(string $needle): bool
+    {
+        return mb_strlen($needle) >= self::MIN_QUERY_LENGTH;
+    }
+
+    private static function normalizeDropdownLimit(int $limit): int
+    {
+        return max(1, min($limit, self::MAX_DROPDOWN_LIMIT));
+    }
+
+    private static function normalizePerPage(int $perPage): int
+    {
+        return max(1, min($perPage, self::MAX_PER_PAGE));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private static function fallbackRelations(?int $languageId): array
+    {
+        return [
+            'language:id,code,name,native_name,is_active',
+            'concept:id,status',
+            'concept.domains:id,parent_id,slug,icon,sort_order,is_active',
+            'concept.domains.translations' => fn ($q) => $q
+                ->select(['id', 'domain_id', 'language_id', 'slug', 'name', 'description'])
+                ->when($languageId !== null, fn ($dt) => $dt->where('language_id', $languageId)),
+        ];
+    }
+
+    private static function allowLookup(string $bucket): bool
+    {
+        $request = request();
+        $identity = $request->user()?->id !== null
+            ? 'user:'.$request->user()->id
+            : 'ip:'.$request->ip();
+
+        $key = 'search:lookup:'.$bucket.':'.$identity;
+        if (RateLimiter::tooManyAttempts($key, 240)) {
+            return false;
+        }
+
+        RateLimiter::hit($key, 60);
+
+        return true;
     }
 }

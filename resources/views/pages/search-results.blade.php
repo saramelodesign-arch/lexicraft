@@ -5,6 +5,10 @@
     :og-url="$canonical"
     :robots-meta="$robotsMeta"
 >
+    @push('meta')
+        @include('partials.hreflang-alternates', ['alternates' => $alternates, 'xDefaultUrl' => $xDefaultUrl])
+    @endpush
+
     <livewire:layout.header />
 
     <main id="content" class="flex-1 px-4 py-10 sm:px-6 lg:px-8">

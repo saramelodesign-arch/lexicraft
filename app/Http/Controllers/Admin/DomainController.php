@@ -17,6 +17,8 @@ final class DomainController extends Controller
 {
     public function index(Request $request): View
     {
+        $this->authorize('viewAny', Domain::class);
+
         $needle = trim($request->string('q')->toString());
 
         $query = Domain::query()
@@ -41,6 +43,8 @@ final class DomainController extends Controller
 
     public function create(): View
     {
+        $this->authorize('create', Domain::class);
+
         $languages = Language::query()->where('is_active', true)->orderBy('code')->get();
         $parents = Domain::query()->where('is_active', true)->orderBy('slug')->get();
 
@@ -52,6 +56,8 @@ final class DomainController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        $this->authorize('create', Domain::class);
+
         $languages = Language::query()->where('is_active', true)->orderBy('code')->get();
         $rules = $this->translationRules($languages, null);
         $rules['slug'] = ['required', 'string', 'max:255', 'regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/', 'unique:domains,slug'];
@@ -91,11 +97,13 @@ final class DomainController extends Controller
 
         return redirect()
             ->route('admin.domains.edit', $domain)
-            ->with('status', __('Domain created.'));
+            ->with('status', __('admin.msg_domain_created'));
     }
 
     public function edit(Domain $domain): View
     {
+        $this->authorize('update', $domain);
+
         $domain->load(['translations.language', 'parent']);
         $languages = Language::query()->where('is_active', true)->orderBy('code')->get();
         $parents = Domain::query()->where('is_active', true)->where('id', '!=', $domain->id)->orderBy('slug')->get();
@@ -109,6 +117,8 @@ final class DomainController extends Controller
 
     public function update(Request $request, Domain $domain): RedirectResponse
     {
+        $this->authorize('update', $domain);
+
         $languages = Language::query()->where('is_active', true)->orderBy('code')->get();
         $rules = $this->translationRules($languages, $domain);
         $rules['slug'] = [
@@ -160,20 +170,22 @@ final class DomainController extends Controller
 
         return redirect()
             ->route('admin.domains.edit', $domain)
-            ->with('status', __('Domain updated.'));
+            ->with('status', __('admin.msg_domain_updated'));
     }
 
     public function destroy(Domain $domain): RedirectResponse
     {
+        $this->authorize('delete', $domain);
+
         if ($domain->children()->exists()) {
-            return back()->withErrors(['domain' => __('Reassign or delete child domains first.')]);
+            return back()->withErrors(['domain' => __('admin.msg_reassign_child_domains')]);
         }
 
         $domain->delete();
 
         return redirect()
             ->route('admin.domains.index')
-            ->with('status', __('Domain deleted.'));
+            ->with('status', __('admin.msg_domain_deleted'));
     }
 
     /**
@@ -215,7 +227,7 @@ final class DomainController extends Controller
         $walker = $parentId;
         for ($i = 0; $i < 64; $i++) {
             if ($walker === (int) $domain->id) {
-                abort(422, __('Invalid parent: would create a cycle.'));
+                abort(422, __('admin.msg_invalid_parent_cycle'));
             }
             $next = Domain::query()->whereKey($walker)->value('parent_id');
             if ($next === null) {

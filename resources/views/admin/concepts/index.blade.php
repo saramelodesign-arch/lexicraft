@@ -1,46 +1,46 @@
-@extends('layouts.admin', ['pageTitle' => __('Concepts')])
+@extends('layouts.admin', ['pageTitle' => __('admin.concepts')])
 
 @section('subhead')
-    {{ __('Search, filter by publication state, domain, or missing locale coverage.') }}
+    {{ __('admin.search_subhead') }}
 @endsection
 
 @section('content')
     <flux:card class="p-6">
         <form method="get" action="{{ route('admin.concepts.index') }}" class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <flux:input name="q" value="{{ $filters['q'] }}" :label="__('Search')" placeholder="{{ __('Term, slug, snippet…') }}" />
+            <flux:input name="q" value="{{ $filters['q'] }}" :label="__('admin.search')" placeholder="{{ __('admin.term_slug_snippet') }}" />
             <div class="space-y-2">
-                <flux:label>{{ __('Status') }}</flux:label>
+                <flux:label>{{ __('admin.status') }}</flux:label>
                 <select name="status" class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-900">
-                    <option value="">{{ __('Any') }}</option>
-                    <option value="draft" @selected($filters['status'] === 'draft')>{{ __('Draft') }}</option>
-                    <option value="review" @selected($filters['status'] === 'review')>{{ __('Review') }}</option>
-                    <option value="published" @selected($filters['status'] === 'published')>{{ __('Published') }}</option>
-                    <option value="archived" @selected($filters['status'] === 'archived')>{{ __('Archived') }}</option>
+                    <option value="">{{ __('admin.any') }}</option>
+                    <option value="draft" @selected($filters['status'] === 'draft')>{{ __('admin.draft') }}</option>
+                    <option value="review" @selected($filters['status'] === 'review')>{{ __('admin.review') }}</option>
+                    <option value="published" @selected($filters['status'] === 'published')>{{ __('admin.published') }}</option>
+                    <option value="archived" @selected($filters['status'] === 'archived')>{{ __('admin.archived') }}</option>
                 </select>
             </div>
             <div class="space-y-2">
-                <flux:label>{{ __('Domain filter') }}</flux:label>
+                <flux:label>{{ __('admin.domain_filter') }}</flux:label>
                 <select name="domain_id" class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-900">
-                    <option value="">{{ __('Any domain') }}</option>
+                    <option value="">{{ __('admin.any_domain') }}</option>
                     @foreach ($domains as $d)
                         <option value="{{ $d->id }}" @selected((int) ($filters['domain_id'] ?? 0) === $d->id)>{{ $d->slug }}</option>
                     @endforeach
                 </select>
             </div>
             <div class="space-y-2">
-                <flux:label>{{ __('Missing locale') }}</flux:label>
+                <flux:label>{{ __('admin.missing_locale') }}</flux:label>
                 <select name="missing_locale" class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-900">
-                    <option value="">{{ __('—') }}</option>
+                    <option value="">{{ __('admin.top_level') }}</option>
                     @foreach ($languages as $lang)
                         <option value="{{ $lang->code }}" @selected($filters['missing_locale'] === $lang->code)>{{ strtoupper($lang->code) }} — {{ $lang->native_name ?? $lang->name }}</option>
                     @endforeach
                 </select>
             </div>
             <div class="flex items-end gap-2 md:col-span-2 lg:col-span-4">
-                <flux:button type="submit" variant="primary">{{ __('Apply filters') }}</flux:button>
-                <flux:button variant="ghost" :href="route('admin.concepts.index')">{{ __('Reset') }}</flux:button>
+                <flux:button type="submit" variant="primary">{{ __('admin.apply_filters') }}</flux:button>
+                <flux:button variant="ghost" :href="route('admin.concepts.index')">{{ __('admin.reset') }}</flux:button>
                 <flux:spacer />
-                <flux:button variant="primary" :href="route('admin.concepts.create')">{{ __('New concept') }}</flux:button>
+                <flux:button variant="primary" :href="route('admin.concepts.create')">{{ __('admin.new_concept') }}</flux:button>
             </div>
         </form>
     </flux:card>
@@ -49,13 +49,13 @@
         <table class="min-w-full divide-y divide-zinc-200 text-sm dark:divide-zinc-800">
             <thead class="bg-zinc-50 text-left text-xs font-semibold uppercase text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400">
                 <tr>
-                    <th class="px-4 py-3">{{ __('ID') }}</th>
-                    <th class="px-4 py-3">{{ __('Status') }}</th>
-                    <th class="px-4 py-3">{{ __('Coverage') }}</th>
-                    <th class="px-4 py-3">{{ __('Published locales') }}</th>
-                    <th class="px-4 py-3">{{ __('Labels') }}</th>
-                    <th class="px-4 py-3">{{ __('Warnings') }}</th>
-                    <th class="px-4 py-3">{{ __('Updated') }}</th>
+                    <th class="px-4 py-3">{{ __('admin.id') }}</th>
+                    <th class="px-4 py-3">{{ __('admin.status') }}</th>
+                    <th class="px-4 py-3">{{ __('admin.coverage') }}</th>
+                    <th class="px-4 py-3">{{ __('admin.published_locales') }}</th>
+                    <th class="px-4 py-3">{{ __('admin.labels') }}</th>
+                    <th class="px-4 py-3">{{ __('admin.warnings') }}</th>
+                    <th class="px-4 py-3">{{ __('admin.updated') }}</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-zinc-100 dark:divide-zinc-800">
@@ -78,9 +78,9 @@
                         </td>
                         <td class="px-4 py-3 text-xs text-zinc-500">
                             @if ($concept->status === 'published' && $concept->published_translations_count === 0)
-                                {{ __('No published translation') }}
+                                {{ __('admin.no_published_translation') }}
                             @elseif ($concept->translations_count < $languages->count())
-                                {{ __('Missing locales') }}
+                                {{ __('admin.missing_locales') }}
                             @else
                                 —
                             @endif

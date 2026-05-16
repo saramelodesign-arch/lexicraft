@@ -46,7 +46,7 @@ new #[Title('Profile settings')] class extends Component {
 
         $user->save();
 
-        Flux::toast(variant: 'success', text: __('Profile updated.'));
+        Flux::toast(variant: 'success', text: __('messages.profile_updated'));
     }
 
     /**
@@ -64,7 +64,7 @@ new #[Title('Profile settings')] class extends Component {
 
         $user->sendEmailVerificationNotification();
 
-        Flux::toast(text: __('A new verification link has been sent to your email address.'));
+        Flux::toast(text: __('messages.resend_verification_email_notice'));
     }
 
     #[Computed]
@@ -96,10 +96,10 @@ new #[Title('Profile settings')] class extends Component {
                 @if ($this->hasUnverifiedEmail)
                     <div>
                         <flux:text class="mt-4">
-                            {{ __('Your email address is unverified.') }}
+                            {{ __('messages.unverified_email') }}
 
                             <flux:link class="text-sm cursor-pointer" wire:click.prevent="resendVerificationNotification">
-                                {{ __('Click here to re-send the verification email.') }}
+                                {{ __('messages.unverified_email_resend') }}
                             </flux:link>
                         </flux:text>
 

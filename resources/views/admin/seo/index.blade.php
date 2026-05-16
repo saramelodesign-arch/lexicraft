@@ -1,22 +1,22 @@
-@extends('layouts.admin', ['pageTitle' => __('SEO review')])
+@extends('layouts.admin', ['pageTitle' => __('admin.seo_review')])
 
 @section('subhead')
-    {{ __('Published translations missing title, description, or Open Graph headline — open each concept to complete metadata.') }}
+    {{ __('admin.dash_missing_og') }}
 @endsection
 
 @section('content')
     <flux:card class="p-6">
         <form method="get" class="flex flex-wrap items-end gap-4">
             <div class="space-y-2">
-                <flux:label>{{ __('Locale filter') }}</flux:label>
+                <flux:label>{{ __('admin.locale_filter') }}</flux:label>
                 <select name="locale" class="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-900">
-                    <option value="">{{ __('All') }}</option>
+                    <option value="">{{ __('admin.all') }}</option>
                     @foreach (\App\Support\Locales::codes() as $code)
                         <option value="{{ $code }}" @selected($locale === $code)>{{ strtoupper($code) }}</option>
                     @endforeach
                 </select>
             </div>
-            <flux:button type="submit" variant="primary">{{ __('Apply') }}</flux:button>
+            <flux:button type="submit" variant="primary">{{ __('admin.apply') }}</flux:button>
         </form>
     </flux:card>
 
@@ -24,9 +24,9 @@
         <table class="min-w-full divide-y divide-zinc-200 text-sm dark:divide-zinc-800">
             <thead class="bg-zinc-50 text-left text-xs font-semibold uppercase text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400">
                 <tr>
-                    <th class="px-4 py-3">{{ __('Term') }}</th>
-                    <th class="px-4 py-3">{{ __('Locale') }}</th>
-                    <th class="px-4 py-3">{{ __('Missing') }}</th>
+                    <th class="px-4 py-3">{{ __('admin.term') }}</th>
+                    <th class="px-4 py-3">{{ __('admin.locale') }}</th>
+                    <th class="px-4 py-3">{{ __('admin.missing') }}</th>
                     <th class="px-4 py-3"></th>
                 </tr>
             </thead>
@@ -35,10 +35,10 @@
                     @php
                         $missing = [];
                         if (trim((string) $tr->seo_title) === '') {
-                            $missing[] = __('title');
+                            $missing[] = __('admin.title');
                         }
                         if (trim((string) $tr->seo_description) === '') {
-                            $missing[] = __('description');
+                            $missing[] = __('admin.description');
                         }
                         if (trim((string) $tr->og_title) === '') {
                             $missing[] = 'OG';
@@ -54,13 +54,13 @@
                                 $editUrl = route('admin.concepts.edit', $tr->concept_id).($lc !== '' ? '#locale-'.$lc : '');
                             @endphp
                             <flux:link :href="$editUrl" wire:navigate>
-                                {{ __('Edit') }}
+                                {{ __('admin.edit') }}
                             </flux:link>
                         </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="4" class="px-4 py-8 text-center text-sm text-zinc-500">{{ __('No gaps in this filter.') }}</td>
+                        <td colspan="4" class="px-4 py-8 text-center text-sm text-zinc-500">{{ __('admin.no_gaps_for_filter') }}</td>
                     </tr>
                 @endforelse
             </tbody>

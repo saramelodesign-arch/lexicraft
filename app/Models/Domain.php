@@ -14,7 +14,13 @@ class Domain extends Model
     /** @use HasFactory<DomainFactory> */
     use HasFactory;
 
-    protected $guarded = [];
+    protected $fillable = [
+        'parent_id',
+        'slug',
+        'icon',
+        'sort_order',
+        'is_active',
+    ];
 
     protected function casts(): array
     {

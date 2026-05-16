@@ -13,7 +13,13 @@ class DomainTranslation extends Model
     /** @use HasFactory<DomainTranslationFactory> */
     use HasFactory;
 
-    protected $guarded = [];
+    protected $fillable = [
+        'domain_id',
+        'language_id',
+        'slug',
+        'name',
+        'description',
+    ];
 
     public function domain(): BelongsTo
     {

@@ -6,11 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\ConceptTranslation;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 final class SeoOverviewController extends Controller
 {
     public function index(Request $request): View
     {
+        Gate::authorize('editorial.seo.view');
+
         $query = ConceptTranslation::query()
             ->with(['concept', 'language'])
             ->whereHas('concept', fn ($q) => $q->where('status', 'published'));

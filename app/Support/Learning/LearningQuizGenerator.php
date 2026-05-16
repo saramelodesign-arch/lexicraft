@@ -47,8 +47,8 @@ final class LearningQuizGenerator
         $quiz = Quiz::query()->create([
             'locale' => $locale,
             'slug' => self::SAMPLE_SLUG,
-            'title' => __('Industrial terminology check'),
-            'description' => __('Multiple choice, definitions, semantic relations, and matching—grounded in published glossary entries.'),
+            'title' => __('learning.industrial_terminology_check'),
+            'description' => __('learning.quiz_description'),
             'domain_id' => null,
             'is_published' => true,
         ]);
@@ -142,7 +142,7 @@ final class LearningQuizGenerator
         }
 
         return [
-            'prompt' => __('Which definition best matches the term “:term”?', ['term' => $target->term]),
+            'prompt' => __('learning.prompt_definition_for_term', ['term' => $target->term]),
             'choices' => $choiceRows,
             'correct' => $correctKey,
         ];
@@ -195,7 +195,7 @@ final class LearningQuizGenerator
             }
 
             return [
-                'prompt' => __('Which term is a semantic synonym of “:term”?', ['term' => $translation->term]),
+                'prompt' => __('learning.prompt_semantic_synonym', ['term' => $translation->term]),
                 'relation' => 'synonym',
                 'choices' => $choiceRows,
                 'correct' => $correctKey,
@@ -243,7 +243,7 @@ final class LearningQuizGenerator
         }
 
         return [
-            'prompt' => __('Which term is described by: “:snippet”?', ['snippet' => $snippet]),
+            'prompt' => __('learning.prompt_term_described_by', ['snippet' => $snippet]),
             'choices' => $choiceRows,
             'correct' => $correctKey,
         ];
@@ -271,7 +271,7 @@ final class LearningQuizGenerator
         }
 
         return [
-            'prompt' => __('Match each term to its definition.'),
+            'prompt' => __('learning.match_term_definition'),
             'terms' => $terms,
             'definitions' => array_values($defs),
         ];

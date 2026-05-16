@@ -10,10 +10,8 @@ final class LearningHubController extends Controller
 {
     public function __invoke(string $locale): View
     {
-        $pageTitle = __('Terminology learning');
-        $metaDescription = __(
-            'LexiCraft Glossary learning hub: flashcards, quizzes, and semantic practice mapped to multilingual concepts, domains, and relations.',
-        );
+        $pageTitle = __('learning.hub_title');
+        $metaDescription = __('learning.hub_meta_description');
         $canonical = route('learning.index', ['locale' => $locale], absolute: true);
 
         $alternates = [];

@@ -16,27 +16,32 @@ new class extends Component {
             wire:navigate
         >
             <span class="flex size-6 items-center justify-center rounded border border-zinc-200 bg-white text-zinc-700 shadow-[0_1px_0_0_rgba(0,0,0,0.04)] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200">
-                <x-app-logo-icon class="size-3.5 text-zinc-600 dark:text-zinc-300" />
+                <x-app-logo-icon class="size-4 text-zinc-600 dark:text-zinc-300" />
             </span>
             <span class="text-[12px] font-semibold tracking-tight text-zinc-800 dark:text-zinc-100">{{ config('app.name') }}</span>
         </a>
 
         <nav class="hidden items-center gap-0 lg:flex" aria-label="{{ __('ui.primary_navigation') }}">
             @php
-                $domainsIndex = route('domains.index', ['locale' => \App\Support\Locales::current()], absolute: false);
+                $currentLocale = \App\Support\Locales::current();
+                $domainsIndex = route('domains.index', ['locale' => $currentLocale], absolute: false);
+                $searchIndex = route('search', ['locale' => $currentLocale], absolute: false);
+                $learningIndex = route('learning.index', ['locale' => $currentLocale], absolute: false);
+                $homeIndex = route('home', ['locale' => $currentLocale], absolute: false);
+                $aboutHref = $homeIndex.'#about-lexicraft';
             @endphp
                 @foreach (
                     [
-                        ['label' => __('ui.glossary'), 'href' => '#site-search'],
+                        ['label' => __('ui.glossary'), 'href' => $searchIndex],
                         ['label' => __('ui.domains'), 'href' => $domainsIndex],
-                        ['label' => __('ui.learning'), 'href' => route('learning.index', ['locale' => \App\Support\Locales::current()], absolute: false)],
-                        ['label' => __('ui.about'), 'href' => '#'],
+                        ['label' => __('ui.learning'), 'href' => $learningIndex],
+                        ['label' => __('ui.about'), 'href' => $aboutHref],
                     ]
                         as $item
                 )
                 <a
                     href="{{ $item['href'] }}"
-                    class="rounded-md px-2 py-1 text-[12px] font-medium text-zinc-600 transition-colors hover:bg-zinc-200/70 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/70 dark:hover:text-zinc-100"
+                    class="rounded-md px-2 py-1 text-[12px] font-medium text-zinc-600 transition-colors hover:bg-zinc-200/70 hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 dark:text-zinc-400 dark:hover:bg-zinc-800/70 dark:hover:text-zinc-100 dark:focus-visible:ring-zinc-500 dark:focus-visible:ring-offset-zinc-950"
                 >
                     {{ $item['label'] }}
                 </a>
@@ -46,13 +51,13 @@ new class extends Component {
         <flux:spacer />
 
         <flux:dropdown position="bottom" align="end" class="lg:hidden">
-            <flux:button variant="ghost" size="sm" icon="bars-2" class="size-7 text-zinc-600 dark:text-zinc-400" />
+            <flux:button variant="ghost" size="sm" icon="bars-2" class="size-6 text-zinc-600 dark:text-zinc-400" />
 
             <flux:menu>
-                <flux:menu.item href="#site-search">{{ __('ui.glossary') }}</flux:menu.item>
+                <flux:menu.item :href="route('search', ['locale' => \App\Support\Locales::current()])" wire:navigate>{{ __('ui.glossary') }}</flux:menu.item>
                 <flux:menu.item :href="route('domains.index', ['locale' => \App\Support\Locales::current()])" wire:navigate>{{ __('ui.domains') }}</flux:menu.item>
                 <flux:menu.item :href="route('learning.index', ['locale' => \App\Support\Locales::current()])" wire:navigate>{{ __('ui.learning') }}</flux:menu.item>
-                <flux:menu.item href="#">{{ __('ui.about') }}</flux:menu.item>
+                <flux:menu.item :href="route('home', ['locale' => \App\Support\Locales::current()], absolute: false).'#about-lexicraft'" wire:navigate>{{ __('ui.about') }}</flux:menu.item>
             </flux:menu>
         </flux:dropdown>
 
@@ -62,7 +67,7 @@ new class extends Component {
                 size="sm"
                 class="h-7 gap-1 rounded-md border border-transparent px-1.5 text-[11px] font-medium text-zinc-600 hover:border-zinc-200 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:border-zinc-700 dark:hover:bg-zinc-900"
             >
-                <flux:icon.language variant="micro" class="size-3.5 text-zinc-500 dark:text-zinc-500" />
+                <flux:icon.language variant="micro" class="size-4 text-zinc-500 dark:text-zinc-500" />
                 <span>{{ strtoupper(\Illuminate\Support\Str::before(app()->getLocale(), '_')) }}</span>
             </flux:button>
 

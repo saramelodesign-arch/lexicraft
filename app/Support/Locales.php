@@ -19,6 +19,18 @@ use Illuminate\Validation\Rule;
 final class Locales
 {
     /**
+     * @var array<string, string>
+     */
+    private const OG_LOCALE_MAP = [
+        'en' => 'en_US',
+        'pt' => 'pt_PT',
+        'fr' => 'fr_FR',
+        'de' => 'de_DE',
+        'it' => 'it_IT',
+        'es' => 'es_ES',
+    ];
+
+    /**
      * @return array<string, array{name: string, native: string}>
      */
     public static function supported(): array
@@ -119,6 +131,22 @@ final class Locales
     public static function homeUrl(): string
     {
         return route('home', ['locale' => self::current()], absolute: false);
+    }
+
+    public static function ogLocale(string $locale): string
+    {
+        return self::OG_LOCALE_MAP[$locale] ?? str_replace('-', '_', $locale);
+    }
+
+    /**
+     * @return list<string>
+     */
+    public static function ogLocaleAlternates(string $currentLocale): array
+    {
+        return array_values(array_map(
+            fn (string $code): string => self::ogLocale($code),
+            array_values(array_filter(self::codes(), fn (string $code): bool => $code !== $currentLocale)),
+        ));
     }
 
     /**

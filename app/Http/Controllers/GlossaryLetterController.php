@@ -15,8 +15,8 @@ final class GlossaryLetterController extends Controller
         $localeMeta = Locales::supported()[$locale] ?? null;
         $languageLabel = is_array($localeMeta) ? ($localeMeta['native'] ?? $localeMeta['name'] ?? $locale) : $locale;
 
-        $pageTitle = __('Glossary — letter :letter', ['letter' => $letterUpper]);
-        $metaDescription = __('LexiCraft Glossary: terms starting with :letter in :language.', [
+        $pageTitle = __('search.glossary_letter_with_letter', ['letter' => $letterUpper]);
+        $metaDescription = __('search.glossary_letter_meta', [
             'letter' => $letterUpper,
             'language' => $languageLabel,
         ]);
@@ -34,7 +34,7 @@ final class GlossaryLetterController extends Controller
         $robotsPagination = $page > 1 ? 'noindex,follow' : null;
 
         $breadcrumbRows = [
-            ['name' => __('Home'), 'url' => route('home', ['locale' => $locale], absolute: true)],
+            ['name' => __('ui.home'), 'url' => route('home', ['locale' => $locale], absolute: true)],
             ['name' => $pageTitle, 'url' => $canonical],
         ];
 

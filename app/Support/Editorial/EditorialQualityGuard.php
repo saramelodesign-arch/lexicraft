@@ -30,7 +30,7 @@ final class EditorialQualityGuard
 
         $cleanTerm = trim($term);
         if ($cleanTerm === '' || mb_strlen($cleanTerm, 'UTF-8') < 2) {
-            $errors['term'] = __('Term must contain at least 2 characters.');
+            $errors['term'] = __('admin.msg_term_min_chars');
         }
 
         self::assertNoWeakContent('term', $cleanTerm, $errors);
@@ -40,11 +40,11 @@ final class EditorialQualityGuard
         $isPublishedLike = in_array($translationStatus, [WorkflowStatus::REVIEW, WorkflowStatus::PUBLISHED], true);
         if ($isPublishedLike) {
             if (trim((string) $shortDefinition) === '') {
-                $errors['short_definition'] = __('Short definition is required for review or published translations.');
+                $errors['short_definition'] = __('admin.msg_short_definition_required');
             }
 
             if (trim((string) $fullDefinition) === '') {
-                $errors['full_definition'] = __('Full definition is required for review or published translations.');
+                $errors['full_definition'] = __('admin.msg_full_definition_required');
             }
         }
 
@@ -58,7 +58,7 @@ final class EditorialQualityGuard
             self::assertNoWeakContent("examples.{$index}.example", $example, $errors);
             $key = Str::of($example)->lower()->squish()->toString();
             if (isset($seenExamples[$key])) {
-                $errors["examples.{$index}.example"] = __('Duplicate examples are not allowed.');
+                $errors["examples.{$index}.example"] = __('admin.msg_duplicate_examples');
                 continue;
             }
 
@@ -82,7 +82,7 @@ final class EditorialQualityGuard
 
         foreach (self::BLOCKED_SNIPPETS as $blocked) {
             if (str_contains($normalized, $blocked)) {
-                $errors[$field] = __('Placeholder content is not allowed.');
+                $errors[$field] = __('admin.msg_placeholder_disallowed');
                 return;
             }
         }

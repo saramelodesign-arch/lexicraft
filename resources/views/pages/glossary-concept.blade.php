@@ -28,20 +28,20 @@
         <div class="mx-auto max-w-3xl space-y-8">
             <div class="space-y-3">
                 <flux:link :href="route('home', ['locale' => $locale])" wire:navigate variant="subtle" class="text-[13px] text-zinc-600 dark:text-zinc-400">
-                    ← {{ __('Back to home') }}
+                    ← {{ __('ui.home_back') }}
                 </flux:link>
                 @isset($breadcrumbs)
                     @include('partials.breadcrumbs', ['items' => $breadcrumbs])
                 @endisset
                 <flux:link :href="$letterRoute" wire:navigate variant="subtle" class="block text-[13px] text-zinc-600 dark:text-zinc-400">
-                    ← {{ __('Glossary: letter :letter', ['letter' => $firstLetter]) }}
+                    ← {{ __('search.glossary_letter_with_letter', ['letter' => $firstLetter]) }}
                 </flux:link>
             </div>
 
             <article class="space-y-6">
                 <header class="space-y-2 border-b border-zinc-200/90 pb-6 dark:border-zinc-800">
                     <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500 dark:text-zinc-400">
-                        {{ __('Concept') }}
+                        {{ __('search.concept') }}
                     </p>
                     <h1 class="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
                         {{ $translation->term }}
@@ -80,7 +80,7 @@
                 @if (filled($translation->short_definition))
                     <section aria-labelledby="short-def-heading" class="space-y-2">
                         <h2 id="short-def-heading" class="text-[13px] font-semibold text-zinc-900 dark:text-zinc-50">
-                            {{ __('Summary') }}
+                            {{ __('search.summary') }}
                         </h2>
                         <p class="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
                             {{ $translation->short_definition }}
@@ -91,7 +91,7 @@
                 @if (filled($translation->full_definition))
                     <section aria-labelledby="full-def-heading" class="space-y-2">
                         <h2 id="full-def-heading" class="text-[13px] font-semibold text-zinc-900 dark:text-zinc-50">
-                            {{ __('Definition') }}
+                            {{ __('search.definition') }}
                         </h2>
                         <div class="prose prose-sm max-w-none text-zinc-700 dark:prose-invert dark:text-zinc-300">
                             {!! nl2br(e($translation->full_definition)) !!}
@@ -102,7 +102,7 @@
                 @if (filled($translation->industry_notes))
                     <section aria-labelledby="notes-heading" class="space-y-2">
                         <h2 id="notes-heading" class="text-[13px] font-semibold text-zinc-900 dark:text-zinc-50">
-                            {{ __('Industry notes') }}
+                            {{ __('search.industry_notes') }}
                         </h2>
                         <p class="text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
                             {{ $translation->industry_notes }}
@@ -113,7 +113,7 @@
                 @if ($translation->examples->isNotEmpty())
                     <section aria-labelledby="examples-heading" class="space-y-3">
                         <h2 id="examples-heading" class="text-[13px] font-semibold text-zinc-900 dark:text-zinc-50">
-                            {{ __('Examples') }}
+                            {{ __('admin.examples') }}
                         </h2>
                         <ul class="space-y-3" role="list">
                             @foreach ($translation->examples as $ex)
@@ -137,9 +137,9 @@
                     'locale' => $locale,
                 ])
 
-                <nav class="border-t border-zinc-200/90 pt-6 dark:border-zinc-800" aria-label="{{ __('Other languages') }}">
+                <nav class="border-t border-zinc-200/90 pt-6 dark:border-zinc-800" aria-label="{{ __('search.other_languages') }}">
                     <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500 dark:text-zinc-400">
-                        {{ __('This concept in other languages') }}
+                        {{ __('search.this_concept_other_languages') }}
                     </p>
                     <ul class="mt-2 flex flex-wrap gap-2">
                         @foreach (Locales::codes() as $code)

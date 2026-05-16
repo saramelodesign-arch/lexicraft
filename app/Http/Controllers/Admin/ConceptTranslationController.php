@@ -17,15 +17,17 @@ final class ConceptTranslationController extends Controller
 {
     public function store(StoreConceptTranslationRequest $request, Concept $concept): RedirectResponse
     {
+        $this->authorize('manageTranslations', $concept);
+
         $validated = $request->validated();
 
         $language = Language::query()->findOrFail($validated['language_id']);
         if (! $language->is_active) {
-            return back()->withErrors(['language_id' => __('Choose an active language.')])->withInput();
+            return back()->withErrors(['language_id' => __('admin.msg_choose_active_language')])->withInput();
         }
 
         if ($concept->translations()->where('language_id', $validated['language_id'])->exists()) {
-            return back()->withErrors(['language_id' => __('This concept already has that locale.')])->withInput();
+            return back()->withErrors(['language_id' => __('admin.msg_locale_exists')])->withInput();
         }
 
         $duplicate = DuplicateDetectionService::findExactTermDuplicate(
@@ -35,7 +37,7 @@ final class ConceptTranslationController extends Controller
         );
         if ($duplicate !== null) {
             return back()->withErrors([
-                'term' => __('Another concept already uses this term in that language (concept #:id).', ['id' => $duplicate->concept_id]),
+                'term' => __('admin.msg_duplicate_term_language', ['id' => $duplicate->concept_id]),
             ])->withInput();
         }
 
@@ -56,15 +58,14 @@ final class ConceptTranslationController extends Controller
             'og_description' => null,
         ]);
 
-        $translation->searchable();
-
         return redirect()
             ->route('admin.concepts.edit', $concept)
-            ->with('status', __('Translation added.'));
+            ->with('status', __('admin.translation_added'));
     }
 
     public function update(UpdateConceptTranslationRequest $request, Concept $concept, ConceptTranslation $translation): RedirectResponse
     {
+        $this->authorize('manageTranslations', $concept);
         abort_unless($translation->concept_id === $concept->id, 404);
 
         $validated = $request->validated();
@@ -77,7 +78,7 @@ final class ConceptTranslationController extends Controller
         );
         if ($duplicate !== null) {
             return back()->withErrors([
-                'term' => __('Another concept already uses this term in that language (concept #:id).', ['id' => $duplicate->concept_id]),
+                'term' => __('admin.msg_duplicate_term_language', ['id' => $duplicate->concept_id]),
             ])->withInput();
         }
 
@@ -147,10 +148,8 @@ final class ConceptTranslationController extends Controller
             }
         });
 
-        $translation->searchable();
-
         return redirect()
             ->route('admin.concepts.edit', $concept)
-            ->with('status', __('Translation saved.'));
+            ->with('status', __('admin.translation_saved'));
     }
 }

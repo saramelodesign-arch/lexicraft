@@ -81,10 +81,10 @@ final class LearningFlashcardDeck
             $rows = $grouped[$bucket] ?? collect();
             foreach ($rows->take(3) as $peer) {
                 $label = match ($bucket) {
-                    'synonyms' => __('Synonym: :t', ['t' => $peer->term]),
-                    'broader' => __('Broader: :t', ['t' => $peer->term]),
-                    'narrower' => __('Narrower: :t', ['t' => $peer->term]),
-                    default => __('Related: :t', ['t' => $peer->term]),
+                    'synonyms' => __('learning.flashcard_relation_synonym', ['t' => $peer->term]),
+                    'broader' => __('learning.flashcard_relation_broader', ['t' => $peer->term]),
+                    'narrower' => __('learning.flashcard_relation_narrower', ['t' => $peer->term]),
+                    default => __('learning.flashcard_relation_related', ['t' => $peer->term]),
                 };
                 $hints[] = $label;
             }

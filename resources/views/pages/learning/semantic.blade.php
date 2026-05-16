@@ -4,18 +4,22 @@
     :canonical="$canonical"
     :robots-meta="$robotsMeta ?? null"
 >
+    @push('meta')
+        @include('partials.hreflang-alternates', ['alternates' => $alternates ?? [], 'xDefaultUrl' => $xDefaultUrl ?? null])
+    @endpush
+
     <livewire:layout.header />
 
     <main id="content" class="flex-1">
         <div class="mx-auto max-w-3xl px-4 py-10 sm:px-6 lg:px-8">
             <flux:link href="{{ route('learning.index', ['locale' => $locale]) }}" wire:navigate variant="subtle" class="text-[13px] text-zinc-600 dark:text-zinc-400">
-                ← {{ __('Learning hub') }}
+                ← {{ __('ui.learning_hub') }}
             </flux:link>
             <h1 class="mt-4 text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-                {{ __('Semantic practice') }}
+                {{ __('ui.semantic_practice') }}
             </h1>
             <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-                {{ __('Each prompt is generated from published relations—synonyms, broader/narrower, and related concepts.') }}
+                {{ __('learning.semantic_page_description') }}
             </p>
 
             <div class="mt-8">

@@ -40,10 +40,10 @@ new class extends Component
 <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
     <header class="max-w-2xl">
         <h2 id="domains-heading" class="text-xs font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
-            {{ __('Industrial domains') }}
+            {{ __('search.industrial_domains') }}
         </h2>
         <p class="mt-1 text-[12px] leading-relaxed text-zinc-600 dark:text-zinc-400">
-            {{ __('Structured vocabulary by production area. Follow a domain for published glossary concepts in your language.') }}
+            {{ __('search.structured_vocabulary_description') }}
         </p>
     </header>
 
@@ -69,10 +69,10 @@ new class extends Component
                                 {{ $tr->name }}
                             </h3>
                             <p class="mt-1 text-[11px] font-medium tabular-nums text-zinc-500 dark:text-zinc-400">
-                                {{ __('Terms') }} ·
+                                {{ __('search.terms') }} ·
                                 <span class="text-zinc-600 dark:text-zinc-300">
                                     @if ((int) $domain->terms_count === 0)
-                                        {{ __('—') }}
+                                        {{ __('admin.top_level') }}
                                     @else
                                         {{ $domain->terms_count }}
                                     @endif
@@ -90,14 +90,14 @@ new class extends Component
                         wire:navigate
                         class="mt-2.5 inline-flex items-center gap-1 self-start text-[12px] font-medium text-zinc-800 transition-colors hover:text-zinc-950 dark:text-zinc-200 dark:hover:text-white"
                     >
-                        {{ __('Explore') }}
+                        {{ __('search.explore') }}
                         <span class="text-zinc-400 transition-transform duration-150 group-hover:translate-x-0.5 dark:text-zinc-500" aria-hidden="true">→</span>
                     </a>
                 </article>
             @endif
         @empty
             <p class="col-span-full text-[13px] text-zinc-600 dark:text-zinc-400" role="status">
-                {{ __('No domains are configured yet.') }}
+                {{ __('search.no_domains_configured') }}
             </p>
         @endforelse
     </div>

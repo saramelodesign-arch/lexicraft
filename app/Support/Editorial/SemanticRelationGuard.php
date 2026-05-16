@@ -12,7 +12,7 @@ final class SemanticRelationGuard
     {
         if (in_array($relationType, ['broader', 'narrower'], true) && self::introducesTaxonomyCycle($conceptId, $relatedConceptId, $relationType)) {
             throw ValidationException::withMessages([
-                'relation_type' => __('This relation introduces a broader/narrower cycle.'),
+                'relation_type' => __('admin.msg_semantic_cycle'),
             ]);
         }
     }
@@ -85,7 +85,7 @@ final class SemanticRelationGuard
 
         $relationCount = $concept->outgoingRelations()->count() + $concept->incomingRelations()->count();
         if ($relationCount === 0 && $concept->status === WorkflowStatus::PUBLISHED) {
-            $warnings[] = __('Published concept has no semantic relations.');
+            $warnings[] = __('admin.msg_published_no_semantic_relations');
         }
 
         return $warnings;

@@ -16,7 +16,7 @@
     <main id="content" class="flex-1 px-4 py-10 sm:px-6 lg:px-8">
         <div class="mx-auto max-w-3xl">
             <flux:link :href="route('home', ['locale' => $locale])" wire:navigate variant="subtle" class="text-[13px] text-zinc-600 dark:text-zinc-400">
-                ← {{ __('Back to home') }}
+                ← {{ __('ui.home_back') }}
             </flux:link>
 
             <header class="mt-6 space-y-3">
@@ -31,7 +31,7 @@
                         {{ $pageTitle }}
                     </h1>
                     <p class="max-w-2xl text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-                        {{ __('Paginated terminology for the current locale, sorted alphabetically by translated term.') }}
+                        {{ __('search.glossary_letter_page_description') }}
                     </p>
                 </div>
             </header>

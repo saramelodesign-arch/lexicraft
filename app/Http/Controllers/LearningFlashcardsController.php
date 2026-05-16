@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Domain;
 use App\Models\Language;
+use App\Support\Locales;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 
@@ -29,22 +30,29 @@ final class LearningFlashcardsController extends Controller
         }
 
         $pageTitle = $domainLabel
-            ? __('Flashcards — :domain', ['domain' => $domainLabel])
-            : __('Flashcards');
+            ? __('learning.flashcards_with_domain', ['domain' => $domainLabel])
+            : __('ui.flashcards');
 
-        $metaDescription = __(
-            'Flip cards grounded in LexiCraft Glossary: published definitions, domains, examples, and semantic hints for this locale.',
-        );
+        $metaDescription = __('learning.flashcards_meta_description');
 
         $canonical = $domainSlug !== ''
             ? route('learning.flashcards', ['locale' => $locale, 'domain' => $domainSlug], absolute: true)
             : route('learning.flashcards', ['locale' => $locale], absolute: true);
+        $alternates = [];
+        if ($domainSlug === '') {
+            foreach (Locales::codes() as $code) {
+                $alternates[$code] = route('learning.flashcards', ['locale' => $code], absolute: true);
+            }
+        }
+        $xDefaultUrl = $alternates[Locales::fallback()] ?? (count($alternates) > 0 ? reset($alternates) : $canonical);
 
         return view('pages.learning.flashcards', [
             'locale' => $locale,
             'pageTitle' => $pageTitle,
             'metaDescription' => $metaDescription,
             'canonical' => $canonical,
+            'alternates' => $alternates,
+            'xDefaultUrl' => $xDefaultUrl,
             'domainSlug' => $domainSlug !== '' ? $domainSlug : null,
             'domainId' => $domainId,
             'robotsMeta' => 'noindex,follow',

@@ -43,7 +43,7 @@ Route::prefix('{locale}')
     ->group(function (): void {
         Route::get('/', HomeController::class)->name('home');
 
-        Route::get('search', SearchResultsController::class)->name('search');
+        Route::get('search', SearchResultsController::class)->middleware('throttle:search')->name('search');
 
         Route::get('learning', LearningHubController::class)->name('learning.index');
         Route::get('learning/flashcards', LearningFlashcardsController::class)->name('learning.flashcards');

@@ -9,6 +9,7 @@ use App\Models\Language;
 use App\Models\Quiz;
 use App\Models\QuizQuestion;
 use App\Models\User;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use PHPUnit\Framework\Attributes\Test;
@@ -116,6 +117,67 @@ class LearningSystemTest extends TestCase
             'quiz_id' => $quiz->id,
             'score_percent' => 100,
         ]);
+    }
+
+    #[Test]
+    public function unpublished_quiz_is_not_publicly_accessible_in_page_or_livewire_runtime(): void
+    {
+        Language::query()->create([
+            'code' => 'en',
+            'name' => 'English',
+            'native_name' => 'English',
+            'flag_icon' => null,
+            'is_active' => true,
+        ]);
+
+        $quiz = Quiz::query()->create([
+            'locale' => 'en',
+            'slug' => 'hidden-quiz',
+            'title' => 'Hidden',
+            'description' => null,
+            'domain_id' => null,
+            'is_published' => false,
+        ]);
+
+        $this->get(route('learning.quiz.show', ['locale' => 'en', 'slug' => $quiz->slug]))
+            ->assertNotFound();
+
+        $this->expectException(ModelNotFoundException::class);
+        Livewire::test('learning.quiz-runner', ['quizId' => $quiz->id, 'locale' => 'en']);
+    }
+
+    #[Test]
+    public function quiz_cannot_be_loaded_through_wrong_locale_in_page_or_livewire_runtime(): void
+    {
+        Language::query()->create([
+            'code' => 'en',
+            'name' => 'English',
+            'native_name' => 'English',
+            'flag_icon' => null,
+            'is_active' => true,
+        ]);
+        Language::query()->create([
+            'code' => 'pt',
+            'name' => 'Portuguese',
+            'native_name' => 'Portugues',
+            'flag_icon' => null,
+            'is_active' => true,
+        ]);
+
+        $quiz = Quiz::query()->create([
+            'locale' => 'en',
+            'slug' => 'en-only-quiz',
+            'title' => 'English Only',
+            'description' => null,
+            'domain_id' => null,
+            'is_published' => true,
+        ]);
+
+        $this->get(route('learning.quiz.show', ['locale' => 'pt', 'slug' => $quiz->slug]))
+            ->assertNotFound();
+
+        $this->expectException(ModelNotFoundException::class);
+        Livewire::test('learning.quiz-runner', ['quizId' => $quiz->id, 'locale' => 'pt']);
     }
 
     #[Test]

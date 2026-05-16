@@ -5,9 +5,12 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Concept;
 use App\Support\Locales;
+use App\Support\TrustedEmbedUrl;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Gate;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 final class ConceptMediaController extends Controller
@@ -37,8 +40,8 @@ final class ConceptMediaController extends Controller
             $props['locales'] = $locales;
         }
 
-        $embed = trim((string) $request->input('embed_url', ''));
-        if ($embed !== '') {
+        $embed = TrustedEmbedUrl::normalize((string) $request->input('embed_url', ''));
+        if ($embed !== null) {
             $props['embed_url'] = $embed;
         }
 
@@ -52,10 +55,35 @@ final class ConceptMediaController extends Controller
 
     public function store(Request $request, Concept $concept): RedirectResponse
     {
+        Gate::authorize('media.manage', $concept);
+
         $validated = $request->validate([
             'collection' => ['required', 'string', Rule::in(['featured', 'gallery', 'videos', 'documents'])],
-            'file' => ['required', 'file', 'max:51200'],
-            'embed_url' => ['nullable', 'string', 'max:2048'],
+            'file' => ['required', 'file', 'max:51200', function (string $attribute, mixed $value, \Closure $fail) use ($request): void {
+                if (! $value instanceof UploadedFile) {
+                    $fail(__('admin.msg_media_file_required'));
+
+                    return;
+                }
+
+                $collection = (string) $request->input('collection', '');
+                if (! in_array($collection, ['featured', 'gallery', 'videos', 'documents'], true)) {
+                    $fail(__('admin.msg_media_collection_invalid'));
+
+                    return;
+                }
+
+                $mimeType = (string) ($value->getMimeType() ?? '');
+                if (! in_array($mimeType, $this->allowedMimeTypesForCollection($collection), true)) {
+                    $fail(__('admin.msg_media_file_type_invalid'));
+                }
+            }],
+            'embed_url' => ['nullable', 'string', 'max:2048', function (string $attribute, mixed $value, \Closure $fail): void {
+                $candidate = trim((string) ($value ?? ''));
+                if ($candidate !== '' && ! TrustedEmbedUrl::isTrusted($candidate)) {
+                    $fail(__('admin.msg_embed_url_invalid'));
+                }
+            }],
             'kind' => ['nullable', 'string', Rule::in(['diagram', 'photo'])],
         ]);
 
@@ -78,16 +106,22 @@ final class ConceptMediaController extends Controller
 
         return redirect()
             ->route('admin.concepts.edit', $concept)
-            ->with('status', __('Media uploaded.'));
+            ->with('status', __('admin.msg_media_uploaded'));
     }
 
     public function update(Request $request, Concept $concept, Media $media): RedirectResponse
     {
+        Gate::authorize('media.manage', $concept);
         $this->assertMediaBelongsToConcept($concept, $media);
 
         $request->validate([
             'name' => ['nullable', 'string', 'max:255'],
-            'embed_url' => ['nullable', 'string', 'max:2048'],
+            'embed_url' => ['nullable', 'string', 'max:2048', function (string $attribute, mixed $value, \Closure $fail): void {
+                $candidate = trim((string) ($value ?? ''));
+                if ($candidate !== '' && ! TrustedEmbedUrl::isTrusted($candidate)) {
+                    $fail(__('admin.msg_embed_url_invalid'));
+                }
+            }],
             'kind' => ['nullable', 'string', Rule::in(['diagram', 'photo'])],
         ]);
 
@@ -100,18 +134,19 @@ final class ConceptMediaController extends Controller
 
         return redirect()
             ->route('admin.concepts.edit', $concept)
-            ->with('status', __('Media metadata saved.'));
+            ->with('status', __('admin.msg_media_saved'));
     }
 
     public function destroy(Concept $concept, Media $media): RedirectResponse
     {
+        Gate::authorize('media.manage', $concept);
         $this->assertMediaBelongsToConcept($concept, $media);
 
         $media->delete();
 
         return redirect()
             ->route('admin.concepts.edit', $concept)
-            ->with('status', __('Media removed.'));
+            ->with('status', __('admin.msg_media_removed'));
     }
 
     private function assertMediaBelongsToConcept(Concept $concept, Media $media): void
@@ -120,5 +155,18 @@ final class ConceptMediaController extends Controller
             $media->model_type === Concept::class && (int) $media->model_id === (int) $concept->id,
             404,
         );
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function allowedMimeTypesForCollection(string $collection): array
+    {
+        return match ($collection) {
+            'featured', 'gallery' => ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
+            'videos' => ['image/jpeg', 'image/png', 'image/webp', 'video/mp4'],
+            'documents' => ['application/pdf'],
+            default => [],
+        };
     }
 }

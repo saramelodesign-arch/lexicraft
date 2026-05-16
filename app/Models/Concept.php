@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Support\Editorial\WorkflowStatus;
+use App\Support\Search\QueuedSearchIndexer;
 use Database\Factories\ConceptFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -32,7 +33,12 @@ class Concept extends Model implements HasMedia
 
     public const string COLLECTION_DOCUMENTS = 'documents';
 
-    protected $guarded = [];
+    protected $fillable = [
+        'uuid',
+        'status',
+        'difficulty_level',
+        'is_featured',
+    ];
 
     protected function casts(): array
     {
@@ -52,10 +58,18 @@ class Concept extends Model implements HasMedia
 
         static::saved(function (Concept $concept): void {
             if ($concept->wasChanged('status')) {
-                $concept->translations()->chunkById(100, function ($chunk): void {
-                    $chunk->searchable();
-                });
+                QueuedSearchIndexer::queueConcept((int) $concept->id);
             }
+        });
+
+        static::deleting(function (Concept $concept): void {
+            $translationIds = $concept->translations()
+                ->select('id')
+                ->pluck('id')
+                ->map(static fn (mixed $id): int => (int) $id)
+                ->all();
+
+            QueuedSearchIndexer::queueConceptRemoval((int) $concept->id, $translationIds);
         });
     }
 
@@ -109,7 +123,7 @@ class Concept extends Model implements HasMedia
 
         $this->addMediaCollection(self::COLLECTION_GALLERY)
             ->useDisk($disk)
-            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml']);
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
 
         $this->addMediaCollection(self::COLLECTION_VIDEOS)
             ->useDisk($disk)

@@ -23,11 +23,11 @@
                     </a>
                     <span class="text-[11px] tabular-nums text-zinc-500 dark:text-zinc-400">
                         @if ((int) $domain->terms_count === 0)
-                            {{ __('No terms') }}
+                            {{ __('search.no_terms') }}
                         @elseif ((int) $domain->terms_count === 1)
-                            {{ __('1 term') }}
+                            {{ __('search.one_term') }}
                         @else
-                            {{ __(':count terms', ['count' => $domain->terms_count]) }}
+                            {{ __('search.count_terms', ['count' => $domain->terms_count]) }}
                         @endif
                     </span>
                 </div>

@@ -17,13 +17,15 @@ final class ConceptRelationController extends Controller
 {
     public function store(StoreConceptRelationRequest $request, Concept $concept): RedirectResponse
     {
+        $this->authorize('manageRelations', $concept);
+
         $validated = $request->validated();
 
         SemanticGraph::assertAllowedStoredType($validated['relation_type']);
 
         $languageId = Language::activeIdForCode($validated['related_locale']);
         if ($languageId === null) {
-            return back()->withErrors(['related_locale' => __('Unknown or inactive locale.')])->withInput();
+            return back()->withErrors(['related_locale' => __('admin.msg_unknown_or_inactive_locale')])->withInput();
         }
 
         $relatedTranslation = ConceptTranslation::query()
@@ -33,13 +35,13 @@ final class ConceptRelationController extends Controller
             ->first();
 
         if ($relatedTranslation === null) {
-            return back()->withErrors(['related_slug' => __('No concept found for that slug in the chosen locale.')])->withInput();
+            return back()->withErrors(['related_slug' => __('admin.msg_no_slug_for_locale')])->withInput();
         }
 
         $relatedConceptId = (int) $relatedTranslation->concept_id;
 
         if ($relatedConceptId === (int) $concept->id) {
-            return back()->withErrors(['related_slug' => __('A concept cannot relate to itself.')])->withInput();
+            return back()->withErrors(['related_slug' => __('admin.msg_cannot_relate_self')])->withInput();
         }
 
         try {
@@ -58,22 +60,23 @@ final class ConceptRelationController extends Controller
                 SemanticRelationGuard::ensureSynonymIsSymmetric((int) $concept->id, $relatedConceptId);
             }
         } catch (QueryException) {
-            return back()->withErrors(['relation_type' => __('That relation already exists.')])->withInput();
+            return back()->withErrors(['relation_type' => __('admin.msg_relation_exists')])->withInput();
         }
 
         return redirect()
             ->route('admin.concepts.edit', $concept)
-            ->with('status', __('Relation added.'));
+            ->with('status', __('admin.msg_relation_added'));
     }
 
     public function destroy(Concept $concept, ConceptRelation $relation): RedirectResponse
     {
+        $this->authorize('manageRelations', $concept);
         abort_unless($relation->concept_id === $concept->id, 404);
 
         $relation->delete();
 
         return redirect()
             ->route('admin.concepts.edit', $concept)
-            ->with('status', __('Relation removed.'));
+            ->with('status', __('admin.relation_removed'));
     }
 }

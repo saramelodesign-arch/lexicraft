@@ -20,9 +20,9 @@ new class extends Component {
             <div>
                 <p class="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-500">{{ __('ui.glossary') }}</p>
                 <nav class="mt-2 flex flex-col gap-1.5 text-[12px]" aria-label="{{ __('ui.glossary_navigation') }}">
-                    <a href="#site-search" class="text-zinc-600 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100">{{ __('ui.search') }}</a>
-                    <a href="{{ route('domains.index', ['locale' => \App\Support\Locales::current()]) }}" wire:navigate class="text-zinc-600 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100">{{ __('ui.domains') }}</a>
-                    <a href="{{ route('learning.index', ['locale' => \App\Support\Locales::current()]) }}" wire:navigate class="text-zinc-600 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100">{{ __('ui.learning') }}</a>
+                    <a href="{{ route('search', ['locale' => \App\Support\Locales::current()]) }}" wire:navigate class="text-zinc-600 transition-colors hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 dark:text-zinc-400 dark:hover:text-zinc-100 dark:focus-visible:ring-zinc-500 dark:focus-visible:ring-offset-zinc-950">{{ __('ui.search') }}</a>
+                    <a href="{{ route('domains.index', ['locale' => \App\Support\Locales::current()]) }}" wire:navigate class="text-zinc-600 transition-colors hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 dark:text-zinc-400 dark:hover:text-zinc-100 dark:focus-visible:ring-zinc-500 dark:focus-visible:ring-offset-zinc-950">{{ __('ui.domains') }}</a>
+                    <a href="{{ route('learning.index', ['locale' => \App\Support\Locales::current()]) }}" wire:navigate class="text-zinc-600 transition-colors hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 dark:text-zinc-400 dark:hover:text-zinc-100 dark:focus-visible:ring-zinc-500 dark:focus-visible:ring-offset-zinc-950">{{ __('ui.learning') }}</a>
                 </nav>
             </div>
 
@@ -33,7 +33,7 @@ new class extends Component {
                         <a
                             href="{{ \App\Support\Locales::localizedUrl($localeCode) }}"
                             wire:navigate
-                            class="flex items-center justify-between gap-3 text-zinc-600 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+                            class="flex items-center justify-between gap-3 text-zinc-600 transition-colors hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 dark:text-zinc-400 dark:hover:text-zinc-100 dark:focus-visible:ring-zinc-500 dark:focus-visible:ring-offset-zinc-950"
                         >
                             <span>{{ $localeMeta['native'] }}</span>
                             <span class="font-mono text-[11px] font-medium tabular-nums text-zinc-400 dark:text-zinc-500">{{ strtoupper($localeCode) }}</span>
@@ -46,8 +46,8 @@ new class extends Component {
         <div class="mt-5 flex flex-col gap-2 border-t border-zinc-200/90 pt-4 text-[11px] text-zinc-500 dark:border-zinc-800 dark:text-zinc-500 sm:flex-row sm:items-center sm:justify-between">
             <p>© {{ now()->year }} {{ config('app.name') }}. {{ __('ui.all_rights_reserved') }}</p>
             <nav class="flex flex-wrap gap-x-4 gap-y-1" aria-label="{{ __('ui.legal_and_about') }}">
-                <a href="#" class="transition-colors hover:text-zinc-800 dark:hover:text-zinc-300">{{ __('ui.about') }}</a>
-                <a href="#" class="transition-colors hover:text-zinc-800 dark:hover:text-zinc-300">{{ __('ui.privacy') }}</a>
+                <a href="{{ route('home', ['locale' => \App\Support\Locales::current()], absolute: false) }}#about-lexicraft" wire:navigate class="transition-colors hover:text-zinc-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 dark:hover:text-zinc-300 dark:focus-visible:ring-zinc-500 dark:focus-visible:ring-offset-zinc-950">{{ __('ui.about') }}</a>
+                <span class="cursor-default">{{ __('ui.privacy') }}</span>
             </nav>
         </div>
     </div>

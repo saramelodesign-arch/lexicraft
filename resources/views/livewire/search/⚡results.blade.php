@@ -12,6 +12,8 @@ new class extends Component
 {
     use WithPagination;
 
+    private const int MIN_QUERY_LENGTH = 2;
+
     #[Locked]
     public string $locale = '';
 
@@ -38,7 +40,15 @@ new class extends Component
 
     public function getResultsProperty(): LengthAwarePaginator
     {
-        return GlossarySearch::paginate($this->locale, $this->needle(), 15);
+        $needle = $this->needle();
+        if (mb_strlen($needle) < self::MIN_QUERY_LENGTH) {
+            return new \Illuminate\Pagination\LengthAwarePaginator([], 0, 15, 1, [
+                'path' => request()->url(),
+                'pageName' => 'page',
+            ]);
+        }
+
+        return GlossarySearch::paginate($this->locale, $needle, 15);
     }
 }; ?>
 
@@ -50,10 +60,10 @@ new class extends Component
     <div class="space-y-4">
         <div>
             <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500 dark:text-zinc-400">
-                {{ __('Search glossary') }}
+                {{ __('ui.search_glossary') }}
             </p>
             <h1 class="mt-1 text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-                {{ __('Search results') }}
+                {{ __('ui.search_results') }}
             </h1>
         </div>
 
@@ -61,29 +71,29 @@ new class extends Component
             class="rounded-2xl border border-zinc-200 bg-white p-1.5 shadow-sm ring-1 ring-zinc-950/[0.03] transition-[border-color,box-shadow] duration-150 focus-within:border-zinc-300 focus-within:shadow-md dark:border-zinc-600/90 dark:bg-zinc-900 dark:ring-white/[0.04] dark:focus-within:border-zinc-500 sm:p-2 [&_input]:h-11 [&_input]:min-h-0 [&_input]:rounded-xl [&_input]:border-0 [&_input]:bg-transparent [&_input]:px-3 [&_input]:text-[14px] [&_input]:font-normal [&_input]:text-zinc-900 [&_input]:shadow-none [&_input]:ring-0 dark:[&_input]:text-zinc-100 [&_input]:focus:ring-0"
         >
             <flux:input
-                wire:model.live.debounce.300ms="q"
+                wire:model.live.debounce.450ms="q"
                 type="search"
-                :label="__('Refine query')"
-                :placeholder="__('Terms, definitions, domains…')"
+                :label="__('ui.refine_query')"
+                :placeholder="__('ui.search_placeholder')"
                 icon="magnifying-glass"
                 autocomplete="off"
             />
         </div>
     </div>
 
-    @if ($needle === '')
+    @if (mb_strlen($needle) < 2)
         <div
             class="rounded-xl border border-dashed border-zinc-200/90 bg-zinc-50/80 px-4 py-8 text-center dark:border-zinc-700 dark:bg-zinc-900/40"
             role="status"
         >
             <p class="text-[13px] font-medium text-zinc-800 dark:text-zinc-200">
-                {{ __('Enter a term or phrase to search the glossary.') }}
+                {{ __('ui.search_empty_prompt') }}
             </p>
             <p class="mt-2 text-[12px] leading-relaxed text-zinc-500 dark:text-zinc-400">
                 @if (\App\Support\GlossaryScoutQuery::usesMeilisearch())
-                    {{ __('Results use the Meilisearch index (locale-filtered, typo-tolerant). Domains and related terms influence ranking.') }}
+                    {{ __('ui.search_empty_meili') }}
                 @else
-                    {{ __('Results are scoped to the current language. Related terms and domain labels are included in the match set.') }}
+                    {{ __('ui.search_empty_sql') }}
                 @endif
             </p>
         </div>
@@ -93,10 +103,10 @@ new class extends Component
             role="status"
         >
             <p class="text-[13px] font-medium text-zinc-800 dark:text-zinc-200">
-                {{ __('No results for ":q"', ['q' => $needle]) }}
+                {{ __('ui.search_result_empty', ['q' => $needle]) }}
             </p>
             <p class="mt-2 text-[12px] leading-relaxed text-zinc-500 dark:text-zinc-400">
-                {{ __('Try a shorter fragment, another domain keyword, or browse the glossary by letter.') }}
+                {{ __('ui.search_try_shorter') }}
             </p>
         </div>
     @else
@@ -104,7 +114,7 @@ new class extends Component
             <div class="flex flex-wrap items-end justify-between gap-3 border-b border-zinc-200/90 pb-4 dark:border-zinc-800">
                 <div class="min-w-0">
                     <p id="search-results-heading" class="text-[11px] font-semibold uppercase tracking-[0.16em] text-zinc-500 dark:text-zinc-400">
-                        {{ __('Query') }}
+                        {{ __('ui.search_query_label') }}
                     </p>
                     <p class="mt-1 truncate text-[15px] font-semibold text-zinc-900 dark:text-zinc-50" title="{{ $needle }}">
                         {{ $needle }}
@@ -112,9 +122,9 @@ new class extends Component
                 </div>
                 <p class="text-[12px] tabular-nums text-zinc-500 dark:text-zinc-400">
                     @if ($this->results->total() === 1)
-                        {{ __('1 result') }}
+                        {{ __('ui.result_count_one') }}
                     @else
-                        {{ __(':count results', ['count' => $this->results->total()]) }}
+                        {{ __('ui.result_count_many', ['count' => $this->results->total()]) }}
                     @endif
                 </p>
             </div>

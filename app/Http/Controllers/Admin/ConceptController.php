@@ -12,6 +12,7 @@ use App\Models\Language;
 use App\Support\Editorial\DuplicateDetectionService;
 use App\Support\Editorial\SemanticRelationGuard;
 use App\Support\Editorial\WorkflowStatus;
+use App\Support\Search\QueuedSearchIndexer;
 use App\Support\SemanticGraph;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -22,6 +23,8 @@ final class ConceptController extends Controller
 {
     public function index(Request $request): View
     {
+        $this->authorize('viewAny', Concept::class);
+
         $languages = Language::query()->where('is_active', true)->orderBy('code')->get();
         $domains = Domain::query()->where('is_active', true)->orderBy('slug')->get(['id', 'slug']);
 
@@ -73,6 +76,8 @@ final class ConceptController extends Controller
 
     public function create(): View
     {
+        $this->authorize('create', Concept::class);
+
         $languages = Language::query()->where('is_active', true)->orderBy('code')->get();
         $domains = Domain::query()->where('is_active', true)->orderBy('slug')->get();
 
@@ -84,11 +89,13 @@ final class ConceptController extends Controller
 
     public function store(StoreConceptRequest $request): RedirectResponse
     {
+        $this->authorize('create', Concept::class);
+
         $validated = $request->validated();
 
         $language = Language::query()->findOrFail($validated['language_id']);
         if (! $language->is_active) {
-            return back()->withErrors(['language_id' => __('Choose an active language.')])->withInput();
+            return back()->withErrors(['language_id' => __('admin.msg_choose_active_language')])->withInput();
         }
 
         $duplicate = DuplicateDetectionService::findExactTermDuplicate(
@@ -97,7 +104,7 @@ final class ConceptController extends Controller
         );
         if ($duplicate !== null) {
             return back()->withErrors([
-                'term' => __('A concept translation with this term already exists in the selected language (concept #:id).', ['id' => $duplicate->concept_id]),
+                'term' => __('admin.msg_duplicate_translation_selected_language', ['id' => $duplicate->concept_id]),
             ])->withInput();
         }
 
@@ -130,15 +137,15 @@ final class ConceptController extends Controller
             return $concept;
         });
 
-        $concept->translations()->first()?->searchable();
-
         return redirect()
             ->route('admin.concepts.edit', $concept)
-            ->with('status', __('Concept created.'));
+            ->with('status', __('admin.msg_concept_created'));
     }
 
     public function edit(Concept $concept): View
     {
+        $this->authorize('update', $concept);
+
         $concept->load([
             'translations' => fn ($q) => $q->with(['language', 'examples' => fn ($eq) => $eq->orderBy('sort_order')]),
             'domains:id',
@@ -175,6 +182,8 @@ final class ConceptController extends Controller
 
     public function update(UpdateConceptRequest $request, Concept $concept): RedirectResponse
     {
+        $this->authorize('update', $concept);
+
         $validated = $request->validated();
 
         DB::transaction(function () use ($validated, $request, $concept): void {
@@ -186,19 +195,21 @@ final class ConceptController extends Controller
             $concept->domains()->sync($validated['domain_ids'] ?? []);
         });
 
-        $concept->translations()->each->searchable();
+        QueuedSearchIndexer::queueConcept((int) $concept->id);
 
         return redirect()
             ->route('admin.concepts.edit', $concept)
-            ->with('status', __('Concept updated.'));
+            ->with('status', __('admin.msg_concept_updated'));
     }
 
     public function destroy(Concept $concept): RedirectResponse
     {
+        $this->authorize('delete', $concept);
+
         $concept->delete();
 
         return redirect()
             ->route('admin.concepts.index')
-            ->with('status', __('Concept deleted.'));
+            ->with('status', __('admin.msg_concept_deleted'));
     }
 }

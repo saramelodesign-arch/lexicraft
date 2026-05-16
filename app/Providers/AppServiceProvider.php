@@ -4,15 +4,18 @@ namespace App\Providers;
 
 use App\Http\Responses\FortifyLogoutResponse;
 use App\Models\ConceptRelation;
-use App\Models\ConceptTranslation;
 use App\Models\DomainTranslation;
 use App\Models\Example;
 use App\Models\User;
+use App\Support\Search\QueuedSearchIndexer;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Validation\Rules\Password;
 use Laravel\Fortify\Contracts\LogoutResponse;
 
@@ -34,6 +37,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('access-admin', fn (User $user): bool => $user->canAccessAdmin());
 
         $this->configureDefaults();
+        $this->configureRateLimiters();
         $this->configureConceptSearchIndexHooks();
     }
 
@@ -60,43 +64,57 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
+     * Register named throttles for abuse-sensitive public endpoints.
+     */
+    protected function configureRateLimiters(): void
+    {
+        RateLimiter::for('search', function (Request $request): Limit {
+            $identity = $request->user()?->id !== null
+                ? 'user:'.$request->user()->id
+                : 'ip:'.$request->ip();
+
+            return Limit::perMinute(90)->by('search:'.$identity);
+        });
+    }
+
+    /**
      * Keep Meilisearch / Scout documents aligned when semantic or domain copy changes.
      */
     protected function configureConceptSearchIndexHooks(): void
     {
         ConceptRelation::saved(function (ConceptRelation $relation): void {
-            self::reindexConceptTranslationsForSearch((int) $relation->concept_id);
-            self::reindexConceptTranslationsForSearch((int) $relation->related_concept_id);
+            QueuedSearchIndexer::queueConcept((int) $relation->concept_id);
+            QueuedSearchIndexer::queueConcept((int) $relation->related_concept_id);
         });
 
         ConceptRelation::deleted(function (ConceptRelation $relation): void {
-            self::reindexConceptTranslationsForSearch((int) $relation->concept_id);
-            self::reindexConceptTranslationsForSearch((int) $relation->related_concept_id);
+            QueuedSearchIndexer::queueConcept((int) $relation->concept_id);
+            QueuedSearchIndexer::queueConcept((int) $relation->related_concept_id);
         });
 
         Example::saved(function (Example $example): void {
-            $example->conceptTranslation?->searchable();
+            QueuedSearchIndexer::queueTranslation((int) $example->concept_translation_id);
         });
 
         Example::deleted(function (Example $example): void {
-            if ($example->concept_translation_id !== null) {
-                ConceptTranslation::query()->find($example->concept_translation_id)?->searchable();
-            }
+            QueuedSearchIndexer::queueTranslation((int) $example->concept_translation_id);
         });
 
         DomainTranslation::saved(function (DomainTranslation $translation): void {
-            $translation->domain?->concepts()->chunkById(50, function ($concepts): void {
-                foreach ($concepts as $concept) {
-                    self::reindexConceptTranslationsForSearch((int) $concept->id);
-                }
-            });
+            $this->queueDomainConceptsForReindex($translation);
+        });
+
+        DomainTranslation::deleted(function (DomainTranslation $translation): void {
+            $this->queueDomainConceptsForReindex($translation);
         });
     }
 
-    private static function reindexConceptTranslationsForSearch(int $conceptId): void
+    protected function queueDomainConceptsForReindex(DomainTranslation $translation): void
     {
-        ConceptTranslation::query()->where('concept_id', $conceptId)->chunkById(100, function ($chunk): void {
-            $chunk->searchable();
+        $translation->domain?->concepts()->chunkById(50, function ($concepts): void {
+            foreach ($concepts as $concept) {
+                QueuedSearchIndexer::queueConcept((int) $concept->id);
+            }
         });
     }
 }

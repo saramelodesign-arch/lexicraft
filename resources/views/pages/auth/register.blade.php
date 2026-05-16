@@ -1,4 +1,4 @@
-<x-layouts::auth :title="__('Register')">
+<x-layouts::auth :title="__('auth_ui.register')">
     <div class="flex flex-col gap-6">
         <x-auth-header :title="__('auth_ui.create_account_title')" :description="__('auth_ui.create_account_description')" />
 
@@ -27,7 +27,7 @@
                 type="email"
                 required
                 autocomplete="email"
-                placeholder="email@example.com"
+                :placeholder="__('ui.email_placeholder')"
             />
 
             <flux:select name="preferred_locale" :label="__('ui.preferred_language')" required>
