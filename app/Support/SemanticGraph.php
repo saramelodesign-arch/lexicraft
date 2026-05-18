@@ -128,6 +128,13 @@ final class SemanticGraph
             };
         }
 
+        $excludeRelated = array_flip(ProcessGraph::associativeRelatedPeerIdsToExclude($concept));
+        if ($excludeRelated !== []) {
+            $buckets['related'] = $buckets['related']->filter(
+                fn (ConceptTranslation $t) => ! isset($excludeRelated[$t->concept_id]),
+            )->values();
+        }
+
         foreach (array_keys($buckets) as $key) {
             $buckets[$key] = $buckets[$key]->sortBy(fn (ConceptTranslation $t) => mb_strtolower($t->term, 'UTF-8'))->values();
         }

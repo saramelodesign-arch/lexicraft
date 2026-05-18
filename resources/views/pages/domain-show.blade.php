@@ -44,6 +44,28 @@
                     @endif
                 </header>
 
+                <section aria-labelledby="domain-context-heading" class="space-y-3">
+                    <h2 id="domain-context-heading" class="text-[13px] font-semibold text-zinc-900 dark:text-zinc-50">
+                        {{ __('messages.domain_context_panel') }}
+                    </h2>
+                    <div class="rounded-lg border border-zinc-200/90 bg-zinc-50/80 p-3 dark:border-zinc-800 dark:bg-zinc-900/40">
+                        <div class="flex flex-wrap gap-1.5">
+                            @include('partials.ui.semantic-chip', [
+                                'label' => __('search.industrial_domain').': '.($domain->parent?->translations?->first()?->name ?? $translation->name),
+                                'interactive' => false,
+                            ])
+                            @include('partials.ui.semantic-chip', [
+                                'label' => __('search.sub_domains').': '.($domain->children->count()),
+                                'interactive' => false,
+                            ])
+                            @include('partials.ui.semantic-chip', [
+                                'label' => __('search.related_domains').': '.($relatedDomains->count()),
+                                'interactive' => false,
+                            ])
+                        </div>
+                    </div>
+                </section>
+
                 @if ($domain->children->isNotEmpty())
                     <section aria-labelledby="subdomains-heading" class="space-y-3">
                         <h2 id="subdomains-heading" class="text-[13px] font-semibold text-zinc-900 dark:text-zinc-50">
@@ -77,6 +99,13 @@
                             @endforeach
                         </ul>
                     </section>
+                @else
+                    <section aria-labelledby="subdomains-heading" class="space-y-3">
+                        <h2 id="subdomains-heading" class="text-[13px] font-semibold text-zinc-900 dark:text-zinc-50">
+                            {{ __('search.sub_domains') }}
+                        </h2>
+                        @include('partials.ui.empty-state', ['message' => __('search.no_sub_domains_documented'), 'compact' => true])
+                    </section>
                 @endif
 
                 @if ($relatedDomains->isNotEmpty())
@@ -93,18 +122,22 @@
                                     $rtr = $rel->translations->first();
                                 @endphp
                                 @if ($rtr !== null)
-                                    <flux:badge size="sm" variant="outline" wire:key="rel-{{ $rel->id }}">
-                                        <a
-                                            href="{{ route('domains.show', ['locale' => $locale, 'slug' => $rtr->slug]) }}"
-                                            wire:navigate
-                                            class="hover:underline"
-                                        >
-                                            {{ $rtr->name }}
-                                        </a>
-                                    </flux:badge>
+                                    <span wire:key="rel-{{ $rel->id }}">
+                                        @include('partials.ui.semantic-chip', [
+                                            'label' => $rtr->name,
+                                            'href' => route('domains.show', ['locale' => $locale, 'slug' => $rtr->slug]),
+                                        ])
+                                    </span>
                                 @endif
                             @endforeach
                         </div>
+                    </section>
+                @else
+                    <section aria-labelledby="related-domains-heading" class="space-y-3">
+                        <h2 id="related-domains-heading" class="text-[13px] font-semibold text-zinc-900 dark:text-zinc-50">
+                            {{ __('search.related_domains') }}
+                        </h2>
+                        @include('partials.ui.empty-state', ['message' => __('search.no_related_domains_documented'), 'compact' => true])
                     </section>
                 @endif
 

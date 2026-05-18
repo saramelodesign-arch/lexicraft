@@ -119,5 +119,61 @@
         @endpersist
 
         @fluxScripts
+        <script>
+            (() => {
+                if (window.__lexicraftSearchShortcutBound) {
+                    return;
+                }
+                window.__lexicraftSearchShortcutBound = true;
+
+                const fallbackSearchUrl = @json(route('search', ['locale' => \App\Support\Locales::current()]));
+
+                const isEditableTarget = (target) => {
+                    if (!(target instanceof HTMLElement)) {
+                        return false;
+                    }
+
+                    if (target.isContentEditable || target.closest('[contenteditable="true"]')) {
+                        return true;
+                    }
+
+                    const tagName = target.tagName.toLowerCase();
+                    if (['input', 'textarea', 'select'].includes(tagName)) {
+                        return true;
+                    }
+
+                    return target.closest('input, textarea, select, [role="textbox"]') !== null;
+                };
+
+                const focusSearchInput = () => {
+                    const el = document.querySelector('[data-search-focus]') ?? document.getElementById('global-search-input') ?? document.getElementById('results-search-input');
+                    if (!(el instanceof HTMLElement)) {
+                        return false;
+                    }
+
+                    el.focus();
+                    if (typeof el.select === 'function') {
+                        el.select();
+                    }
+
+                    return true;
+                };
+
+                document.addEventListener('keydown', (event) => {
+                    if (event.defaultPrevented || event.key !== '/' || event.metaKey || event.ctrlKey || event.altKey) {
+                        return;
+                    }
+
+                    if (isEditableTarget(event.target)) {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    if (!focusSearchInput()) {
+                        window.location.assign(fallbackSearchUrl);
+                    }
+                });
+            })();
+        </script>
     </body>
 </html>

@@ -10,6 +10,7 @@ use App\Models\ConceptTranslation;
 use App\Models\Language;
 use App\Support\Editorial\SemanticRelationGuard;
 use App\Support\SemanticGraph;
+use Illuminate\Support\Arr;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 
@@ -63,20 +64,56 @@ final class ConceptRelationController extends Controller
             return back()->withErrors(['relation_type' => __('admin.msg_relation_exists')])->withInput();
         }
 
+        $returnTo = $request->input('return_to');
+        $safeReturnTo = is_string($returnTo) && str_starts_with($returnTo, '/admin/concepts')
+            ? $returnTo
+            : null;
+
+        $concept->loadMissing('translations:concept_id,language_id,status');
+        $relatedConcept = $relatedTranslation->concept()->with('translations:concept_id,language_id,status')->first();
+        $publishedLocaleIds = $concept->translations
+            ->where('status', \App\Support\Editorial\WorkflowStatus::PUBLISHED)
+            ->pluck('language_id')
+            ->unique()
+            ->values()
+            ->all();
+        $missingLocaleCount = 0;
+        foreach ($publishedLocaleIds as $languageId) {
+            $hasTranslation = $relatedConcept?->translations->contains(
+                fn (ConceptTranslation $translation): bool => $translation->language_id === $languageId && $translation->status === \App\Support\Editorial\WorkflowStatus::PUBLISHED
+            ) ?? false;
+            if (! $hasTranslation) {
+                $missingLocaleCount++;
+            }
+        }
+        $warnings = [];
+        if ($missingLocaleCount > 0) {
+            $warnings[] = sprintf(
+                'Related concept is missing %d published locale mapping(s) for current concept locale coverage.',
+                $missingLocaleCount
+            );
+        }
+
         return redirect()
-            ->route('admin.concepts.edit', $concept)
-            ->with('status', __('admin.msg_relation_added'));
+            ->route('admin.concepts.edit', ['concept' => $concept, 'return_to' => $safeReturnTo])
+            ->with('status', __('admin.msg_relation_added'))
+            ->with('governance_warnings', Arr::where($warnings, fn ($warning) => is_string($warning) && $warning !== ''));
     }
 
-    public function destroy(Concept $concept, ConceptRelation $relation): RedirectResponse
+    public function destroy(Concept $concept, ConceptRelation $relation, \Illuminate\Http\Request $request): RedirectResponse
     {
         $this->authorize('manageRelations', $concept);
         abort_unless($relation->concept_id === $concept->id, 404);
 
         $relation->delete();
 
+        $returnTo = $request->input('return_to');
+        $safeReturnTo = is_string($returnTo) && str_starts_with($returnTo, '/admin/concepts')
+            ? $returnTo
+            : null;
+
         return redirect()
-            ->route('admin.concepts.edit', $concept)
+            ->route('admin.concepts.edit', ['concept' => $concept, 'return_to' => $safeReturnTo])
             ->with('status', __('admin.relation_removed'));
     }
 }

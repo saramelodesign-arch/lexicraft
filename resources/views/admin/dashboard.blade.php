@@ -65,12 +65,19 @@
                         <flux:link :href="route('admin.concepts.edit', $c)" wire:navigate class="font-medium">
                             #{{ $c->id }} — {{ $c->translations->first()?->term ?? __('admin.label_missing') }}
                         </flux:link>
-                        <flux:text class="text-xs text-zinc-500">{{ ucfirst($c->status) }}</flux:text>
+                        <div class="mt-1">
+                            @include('partials.ui.status-badge', [
+                                'label' => $c->status === 'review' ? __('admin.in_review') : ucfirst($c->status),
+                                'status' => $c->status,
+                            ])
+                        </div>
                     </div>
                     <flux:text class="text-xs text-zinc-500">{{ $c->updated_at?->diffForHumans() }}</flux:text>
                 </div>
             @empty
-                <flux:text class="py-6 text-sm text-zinc-500">{{ __('admin.no_concepts_yet') }}</flux:text>
+                <div class="py-6">
+                    @include('partials.ui.empty-state', ['message' => __('admin.no_concepts_yet'), 'compact' => true])
+                </div>
             @endforelse
         </div>
     </flux:card>

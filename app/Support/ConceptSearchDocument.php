@@ -20,6 +20,8 @@ final class ConceptSearchDocument
 
     public const int MAX_EXAMPLES_SNIPPET = 1500;
 
+    public const int MAX_EDITORIAL_NOTES = 600;
+
     /**
      * @return array<string, mixed>
      */
@@ -49,7 +51,20 @@ final class ConceptSearchDocument
             }
         }
 
-        $relatedTerms = self::relatedTermsSameLanguage($concept, $languageId);
+        $relatedTerms = array_slice(self::relatedTermsSameLanguage($concept, $languageId), 0, 12);
+        $workflowContextPhrases = ProcessGraph::contextualGuidancePhrases($concept, $languageId);
+        $slug = $translation->slug;
+        $suppressNeighborTerms = is_string($slug)
+            && $workflowContextPhrases !== []
+            && in_array($slug, ProcessGraph::continuitySlugsWithLinePosition(), true);
+        $workflowUpstream = $suppressNeighborTerms
+            ? []
+            : array_slice(ProcessGraph::upstreamTerms($concept, $languageId), 0, 2);
+        $workflowDownstream = $suppressNeighborTerms
+            ? []
+            : array_slice(ProcessGraph::downstreamTerms($concept, $languageId), 0, 2);
+        $workflowRoutes = array_slice(ProcessGraph::routeContextTerms($concept, $languageId), 0, 4);
+        $workflowJourneys = array_slice(ProcessGraph::journeyContextTerms($concept, $languageId), 0, 10);
         $relationTypes = self::outgoingRelationTypes($concept);
 
         $synonyms = self::synonymTokens($translation->meta_keywords);
@@ -59,6 +74,11 @@ final class ConceptSearchDocument
         $fullDef = $translation->full_definition;
         if (is_string($fullDef) && mb_strlen($fullDef, 'UTF-8') > self::MAX_FULL_DEFINITION) {
             $fullDef = mb_substr($fullDef, 0, self::MAX_FULL_DEFINITION, 'UTF-8').'…';
+        }
+
+        $editorialNotes = $translation->editorial_notes;
+        if (is_string($editorialNotes) && mb_strlen($editorialNotes, 'UTF-8') > self::MAX_EDITORIAL_NOTES) {
+            $editorialNotes = mb_substr($editorialNotes, 0, self::MAX_EDITORIAL_NOTES, 'UTF-8').'…';
         }
 
         $isPublished = $concept->status === 'published'
@@ -73,8 +93,14 @@ final class ConceptSearchDocument
             $translation->seo_title,
             $translation->seo_description,
             $translation->industry_notes,
+            $editorialNotes,
             implode(' ', $domainNames),
             implode(' ', $relatedTerms),
+            implode(' ', $workflowUpstream),
+            implode(' ', $workflowDownstream),
+            implode(' ', $workflowRoutes),
+            implode(' ', $workflowJourneys),
+            implode(' ', $workflowContextPhrases),
             $examplesSnippet,
         ], static fn ($v): bool => is_string($v) && $v !== '');
 
@@ -97,6 +123,11 @@ final class ConceptSearchDocument
             'domain_slugs' => array_values(array_unique($domainSlugs)),
             'domain_names' => array_values(array_unique($domainNames)),
             'related_terms' => array_values(array_unique($relatedTerms)),
+            'workflow_upstream_terms' => array_values(array_unique($workflowUpstream)),
+            'workflow_downstream_terms' => array_values(array_unique($workflowDownstream)),
+            'workflow_route_terms' => array_values(array_unique($workflowRoutes)),
+            'workflow_journey_terms' => array_values(array_unique($workflowJourneys)),
+            'workflow_context_phrases' => array_values(array_unique($workflowContextPhrases)),
             'relation_types' => array_values(array_unique($relationTypes)),
             'synonyms' => array_values(array_unique($synonyms)),
             'examples_snippet' => $examplesSnippet,

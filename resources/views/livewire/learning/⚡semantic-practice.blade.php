@@ -194,16 +194,15 @@ new class extends Component
 
 <div class="space-y-6">
     @if ($languageId === null)
-        <p class="text-sm text-zinc-600 dark:text-zinc-400">{{ __('learning.locale_unavailable_semantic') }}</p>
+        @include('partials.ui.empty-state', ['message' => __('learning.locale_unavailable_semantic')])
     @elseif ($prompt === null)
-        <p class="text-sm text-zinc-600 dark:text-zinc-400">
-            {{ __('learning.add_more_semantic_data') }}
-        </p>
+        @include('partials.ui.empty-state', ['message' => __('learning.add_more_semantic_data')])
     @else
         @if ($bucket)
-            <p class="text-[11px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                {{ __('learning.semantic_drill') }} — {{ $bucket }}
-            </p>
+            <div class="flex items-center gap-2">
+                @include('partials.ui.semantic-chip', ['label' => __('learning.semantic_drill'), 'interactive' => false])
+                @include('partials.ui.status-badge', ['label' => strtoupper($bucket), 'status' => 'semantic'])
+            </div>
         @endif
         <p class="text-sm font-medium text-zinc-900 dark:text-zinc-100">{{ $prompt }}</p>
 

@@ -119,11 +119,11 @@ class Concept extends Model implements HasMedia
         $this->addMediaCollection(self::COLLECTION_FEATURED)
             ->useDisk($disk)
             ->singleFile()
-            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml']);
 
         $this->addMediaCollection(self::COLLECTION_GALLERY)
             ->useDisk($disk)
-            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+            ->acceptsMimeTypes(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml']);
 
         $this->addMediaCollection(self::COLLECTION_VIDEOS)
             ->useDisk($disk)

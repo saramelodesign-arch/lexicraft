@@ -58,9 +58,9 @@ class ConceptSearchDocumentTest extends TestCase
         $a->domains()->sync([$domain->id]);
 
         ConceptRelation::query()->create([
-            'concept_id' => $a->id,
-            'related_concept_id' => $b->id,
-            'relation_type' => 'see_also',
+            'concept_id' => $b->id,
+            'related_concept_id' => $a->id,
+            'relation_type' => 'related',
         ]);
 
         ConceptTranslation::query()->create([
@@ -96,10 +96,18 @@ class ConceptSearchDocumentTest extends TestCase
         $this->assertSame('published', $doc['status']);
         $this->assertTrue($doc['is_published']);
         $this->assertContains('upper lasting', $doc['synonyms']);
-        $this->assertContains('see_also', $doc['relation_types']);
+        $this->assertSame([], $doc['relation_types']);
         $this->assertContains('footwear', $doc['domain_slugs']);
         $this->assertContains('Footwear', $doc['domain_names']);
         $this->assertContains('Related term', $doc['related_terms']);
+        $this->assertContains('Related term', $doc['workflow_upstream_terms']);
+        $this->assertArrayHasKey('workflow_route_terms', $doc);
+        $this->assertArrayHasKey('workflow_journey_terms', $doc);
+        $this->assertArrayHasKey('workflow_context_phrases', $doc);
+        $this->assertIsArray($doc['workflow_route_terms']);
+        $this->assertIsArray($doc['workflow_journey_terms']);
+        $this->assertIsArray($doc['workflow_context_phrases']);
+        $this->assertNotEmpty($doc['workflow_context_phrases']);
         $this->assertStringContainsString('lasting', $doc['searchable_text']);
         $this->assertStringContainsString('related term', $doc['searchable_text']);
     }

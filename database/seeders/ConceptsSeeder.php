@@ -22,6 +22,7 @@ class ConceptsSeeder extends Seeder
         $dataset = require __DIR__.'/Data/FootwearConstructionDataset.php';
         $concepts = $dataset['concepts'];
         $relations = $dataset['relations'];
+        $this->assertDatasetSemanticIntegrity($concepts, $relations);
 
         $languages = Language::query()->get()->keyBy('code');
         $domainsBySlug = Domain::query()->get()->keyBy('slug');
@@ -37,7 +38,7 @@ class ConceptsSeeder extends Seeder
             foreach ($concepts as $row) {
                 $key = $row['key'];
                 $concept = Concept::query()->create([
-                    'status' => WorkflowStatus::PUBLISHED,
+                    'status' => $row['status'] ?? WorkflowStatus::PUBLISHED,
                     'difficulty_level' => $row['difficulty_level'] ?? 'intermediate',
                     'is_featured' => (bool) ($row['featured'] ?? false),
                 ]);
@@ -61,7 +62,10 @@ class ConceptsSeeder extends Seeder
                     $translation = ConceptTranslation::query()->create([
                         'concept_id' => $concept->id,
                         'language_id' => $language->id,
-                        'status' => WorkflowStatus::PUBLISHED,
+                        'status' => $tr['status'] ?? ($row['translation_status'] ?? WorkflowStatus::PUBLISHED),
+                        'terminology_status' => $tr['terminology_status'] ?? ($row['terminology_status'] ?? \App\Support\Editorial\TerminologyStatus::DRAFT),
+                        'validated_at' => $tr['validated_at'] ?? ($row['validated_at'] ?? null),
+                        'validated_by' => $tr['validated_by'] ?? ($row['validated_by'] ?? null),
                         'term' => $tr['term'],
                         'slug' => $slug,
                         'short_definition' => $tr['short_definition'] ?? null,
@@ -70,6 +74,8 @@ class ConceptsSeeder extends Seeder
                         'seo_description' => $tr['seo_description'] ?? ($tr['short_definition'] ?? ''),
                         'meta_keywords' => $tr['meta_keywords'] ?? null,
                         'industry_notes' => $tr['industry_notes'] ?? null,
+                        'editorial_notes' => $tr['editorial_notes'] ?? ($row['editorial_notes'] ?? null),
+                        'source_reference_text' => $tr['source_reference_text'] ?? ($row['source_reference_text'] ?? null),
                     ]);
 
                     $order = 0;
@@ -102,6 +108,71 @@ class ConceptsSeeder extends Seeder
                 );
             }
         });
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $concepts
+     * @param  list<array{from: string, to: string, type: string}>  $relations
+     */
+    private function assertDatasetSemanticIntegrity(array $concepts, array $relations): void
+    {
+        $conceptKeys = collect($concepts)
+            ->pluck('key')
+            ->filter(fn (mixed $k): bool => is_string($k) && $k !== '')
+            ->values()
+            ->all();
+        $known = array_fill_keys($conceptKeys, true);
+
+        $missingTargets = [];
+        $invalidTypes = [];
+        $selfRelations = [];
+        $seen = [];
+        $duplicateTuples = [];
+        $contradictions = [];
+
+        foreach ($relations as $rel) {
+            $from = $rel['from'] ?? '';
+            $to = $rel['to'] ?? '';
+            $type = $rel['type'] ?? '';
+
+            if (! isset($known[$from])) {
+                $missingTargets[] = "missing_from:{$from}";
+            }
+            if (! isset($known[$to])) {
+                $missingTargets[] = "missing_to:{$to}";
+            }
+            if (! SemanticGraph::isAllowedStoredType($type)) {
+                $invalidTypes[] = "{$from}->{$to}:{$type}";
+            }
+            if ($from === $to) {
+                $selfRelations[] = "{$from}:{$type}";
+            }
+
+            $tuple = "{$from}|{$to}|{$type}";
+            if (isset($seen[$tuple])) {
+                $duplicateTuples[] = $tuple;
+            }
+            $seen[$tuple] = true;
+
+            if ($type === 'broader' && isset($seen["{$from}|{$to}|narrower"])) {
+                $contradictions[] = "{$from}<->{$to}";
+            }
+            if ($type === 'narrower' && isset($seen["{$from}|{$to}|broader"])) {
+                $contradictions[] = "{$from}<->{$to}";
+            }
+        }
+
+        $issues = array_merge(
+            array_unique($missingTargets),
+            array_unique($invalidTypes),
+            array_unique($selfRelations),
+            array_unique($duplicateTuples),
+            array_unique($contradictions),
+        );
+
+        if ($issues !== []) {
+            throw new \RuntimeException('Footwear dataset semantic-integrity failure: '.implode(', ', $issues));
+        }
     }
 
     private function uniqueSlug(string $base, int $languageId, array &$usedSlugs): string

@@ -110,4 +110,58 @@ class AdminConceptManagementTest extends TestCase
 
         $this->assertSame(1, $a->outgoingRelations()->count());
     }
+
+    #[Test]
+    public function reverse_related_relation_is_rejected_to_avoid_semantic_noise(): void
+    {
+        $user = User::factory()->admin()->create();
+
+        $en = Language::query()->create([
+            'code' => 'en',
+            'name' => 'English',
+            'native_name' => 'English',
+            'flag_icon' => null,
+            'is_active' => true,
+        ]);
+
+        $a = Concept::query()->create([
+            'status' => 'published',
+            'difficulty_level' => null,
+            'is_featured' => false,
+        ]);
+        $b = Concept::query()->create([
+            'status' => 'published',
+            'difficulty_level' => null,
+            'is_featured' => false,
+        ]);
+
+        ConceptTranslation::query()->create([
+            'concept_id' => $a->id,
+            'language_id' => $en->id,
+            'term' => 'Upper lock',
+            'slug' => 'upper-lock',
+        ]);
+        ConceptTranslation::query()->create([
+            'concept_id' => $b->id,
+            'language_id' => $en->id,
+            'term' => 'Heel lock',
+            'slug' => 'heel-lock',
+        ]);
+
+        $this->actingAs($user)
+            ->post(route('admin.concepts.relations.store', $a), [
+                'relation_type' => 'related',
+                'related_locale' => 'en',
+                'related_slug' => 'heel-lock',
+            ])
+            ->assertRedirect();
+
+        $this->actingAs($user)
+            ->post(route('admin.concepts.relations.store', $b), [
+                'relation_type' => 'related',
+                'related_locale' => 'en',
+                'related_slug' => 'upper-lock',
+            ])
+            ->assertSessionHasErrors(['relation_type']);
+    }
 }

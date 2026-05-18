@@ -44,9 +44,7 @@ new class extends Component
     @if ($this->languageId === null)
         <p class="text-sm text-zinc-600 dark:text-zinc-400">{{ __('search.language_not_available') }}</p>
     @elseif ($this->concepts->isEmpty())
-        <p class="rounded-lg border border-dashed border-zinc-200/90 bg-zinc-50/80 px-3 py-6 text-center text-[13px] text-zinc-600 dark:border-zinc-700 dark:bg-zinc-900/40 dark:text-zinc-400" role="status">
-            {{ __('search.no_published_concepts_for_domain') }}
-        </p>
+        @include('partials.ui.empty-state', ['message' => __('search.no_published_concepts_for_domain')])
     @else
         <ul class="divide-y divide-zinc-200/90 dark:divide-zinc-800" role="list">
             @foreach ($this->concepts as $row)
@@ -67,6 +65,12 @@ new class extends Component
                                     {{ \Illuminate\Support\Str::limit($row->short_definition, 220) }}
                                 </p>
                             @endif
+                                <div class="flex flex-wrap gap-1.5">
+                                    @if ($row->language?->code)
+                                        @include('partials.ui.locale-indicator', ['code' => $row->language->code])
+                                    @endif
+                                    @include('partials.ui.status-badge', ['label' => __('admin.published'), 'status' => 'published'])
+                                </div>
                         </div>
                     </div>
                     @if ($row->concept?->domains->isNotEmpty())
@@ -79,15 +83,16 @@ new class extends Component
                                     $dtr = $this->languageId !== null ? $d->translations->firstWhere('language_id', $this->languageId) : null;
                                 @endphp
                                 @if ($dtr !== null && $dtr->slug !== '')
-                                    <flux:badge size="sm" variant="outline" wire:key="dc-d-{{ $row->id }}-{{ $d->id }}">
-                                        <a href="{{ route('domains.show', ['locale' => $this->locale, 'slug' => $dtr->slug]) }}" wire:navigate class="hover:underline">
-                                            {{ $dlabel }}
-                                        </a>
-                                    </flux:badge>
+                                    <span wire:key="dc-d-{{ $row->id }}-{{ $d->id }}">
+                                        @include('partials.ui.semantic-chip', [
+                                            'label' => $dlabel,
+                                            'href' => route('domains.show', ['locale' => $this->locale, 'slug' => $dtr->slug]),
+                                        ])
+                                    </span>
                                 @else
-                                    <flux:badge size="sm" variant="outline" wire:key="dc-d-{{ $row->id }}-{{ $d->id }}">
-                                        {{ $dlabel }}
-                                    </flux:badge>
+                                    <span wire:key="dc-d-{{ $row->id }}-{{ $d->id }}">
+                                        @include('partials.ui.semantic-chip', ['label' => $dlabel, 'interactive' => false])
+                                    </span>
                                 @endif
                             @endforeach
                         </div>

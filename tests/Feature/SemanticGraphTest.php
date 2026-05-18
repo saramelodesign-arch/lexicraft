@@ -6,6 +6,7 @@ use App\Models\Concept;
 use App\Models\ConceptRelation;
 use App\Models\ConceptTranslation;
 use App\Models\Language;
+use App\Support\Editorial\WorkflowStatus;
 use App\Support\SemanticGraph;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -150,6 +151,7 @@ class SemanticGraphTest extends TestCase
             'seo_description' => null,
             'meta_keywords' => null,
             'industry_notes' => null,
+            'status' => WorkflowStatus::PUBLISHED,
         ]);
 
         ConceptTranslation::query()->create([
@@ -163,6 +165,7 @@ class SemanticGraphTest extends TestCase
             'seo_description' => null,
             'meta_keywords' => null,
             'industry_notes' => null,
+            'status' => WorkflowStatus::PUBLISHED,
         ]);
 
         ConceptRelation::query()->create([
@@ -173,7 +176,8 @@ class SemanticGraphTest extends TestCase
 
         $this->get(route('glossary.concept', ['locale' => 'en', 'slug' => 'lasting']))
             ->assertOk()
-            ->assertSee('Related terminology', false)
+            ->assertSee('Process workflow', false)
+            ->assertSee('Downstream (after)', false)
             ->assertSee('Upper', false)
             ->assertSee('Explore related terminology', false)
             ->assertSee('seeAlso', false);

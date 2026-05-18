@@ -72,7 +72,7 @@ new class extends Component
 
 <div class="space-y-6">
     @if ($card === null)
-        <p class="text-sm text-zinc-600 dark:text-zinc-400">{{ __('learning.flashcards_empty') }}</p>
+        @include('partials.ui.empty-state', ['message' => __('learning.flashcards_empty')])
     @else
         <div class="text-center text-xs text-zinc-500 dark:text-zinc-500">
             {{ __('learning.card_of_total', ['i' => $index + 1, 'n' => count($cards)]) }}
@@ -95,9 +95,11 @@ new class extends Component
                     {{ $card['term'] }}
                 </p>
                 @if (($card['domains'] ?? []) !== [])
-                    <p class="mt-4 text-xs text-zinc-500 dark:text-zinc-400">
-                        {{ __('learning.domain_list', ['d' => implode(', ', $card['domains'])]) }}
-                    </p>
+                    <div class="mt-4 flex flex-wrap gap-1.5">
+                        @foreach (array_slice($card['domains'], 0, 4) as $domainLabel)
+                            @include('partials.ui.semantic-chip', ['label' => $domainLabel, 'interactive' => false])
+                        @endforeach
+                    </div>
                 @endif
             @else
                 <p class="text-[11px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{{ __('learning.definition_context') }}</p>

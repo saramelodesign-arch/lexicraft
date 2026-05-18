@@ -5,10 +5,15 @@
 @endsection
 
 @section('content')
-    @if ($semanticWarnings !== [])
+    @php
+        $flashGovernanceWarnings = session('governance_warnings', []);
+        $allGovernanceWarnings = array_values(array_filter(array_merge($semanticWarnings, $governanceWarnings ?? [], is_array($flashGovernanceWarnings) ? $flashGovernanceWarnings : [])));
+    @endphp
+
+    @if ($allGovernanceWarnings !== [])
         <flux:card class="p-4">
             <ul class="space-y-1 text-sm text-amber-700 dark:text-amber-300">
-                @foreach ($semanticWarnings as $warning)
+                @foreach ($allGovernanceWarnings as $warning)
                     <li>• {{ $warning }}</li>
                 @endforeach
             </ul>
@@ -42,6 +47,7 @@
         <form method="post" action="{{ route('admin.concepts.update', $concept) }}" class="mt-6 grid max-w-3xl gap-6">
             @csrf
             @method('PUT')
+            <input type="hidden" name="return_to" value="{{ $editorialReturn }}" />
             <div class="grid gap-4 sm:grid-cols-2">
                 <div class="space-y-2">
                     <flux:label>{{ __('admin.workflow_status') }}</flux:label>
@@ -78,6 +84,7 @@
 
         <form method="post" action="{{ route('admin.concepts.relations.store', $concept) }}" class="mt-6 grid gap-4 md:grid-cols-4">
             @csrf
+            <input type="hidden" name="return_to" value="{{ $editorialReturn }}" />
             <div class="space-y-2 md:col-span-1">
                 <flux:label>{{ __('admin.type') }}</flux:label>
                 <select name="relation_type" required class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-900">
@@ -117,6 +124,7 @@
                     <form method="post" action="{{ route('admin.concepts.relations.destroy', [$concept, $rel]) }}">
                         @csrf
                         @method('DELETE')
+                        <input type="hidden" name="return_to" value="{{ $editorialReturn }}" />
                         <flux:button size="sm" variant="ghost" type="submit">{{ __('admin.remove') }}</flux:button>
                     </form>
                 </li>
@@ -152,13 +160,25 @@
                     <option value="diagram">{{ __('admin.diagram') }}</option>
                 </select>
             </div>
+            <div class="space-y-2 md:col-span-2">
+                <flux:label>Semantic role</flux:label>
+                <select name="semantic_role" class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-900">
+                    <option value="">Auto</option>
+                    @foreach (\App\Support\ConceptMedia::SEMANTIC_ROLES as $role)
+                        <option value="{{ $role }}">{{ ucfirst($role) }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <flux:input name="source_label" label="Technical source label" class="md:col-span-2" />
+            <flux:input name="source_url" label="Technical source URL" placeholder="https://…" class="md:col-span-2" />
             @foreach (\App\Support\Locales::codes() as $code)
                 <div class="md:col-span-2 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
                     <flux:text class="text-xs font-semibold uppercase text-zinc-500">{{ strtoupper($code) }}</flux:text>
-                    <div class="mt-2 grid gap-3 sm:grid-cols-3">
+                    <div class="mt-2 grid gap-3 sm:grid-cols-2">
                         <flux:input name="locales[{{ $code }}][title]" :label="__('admin.title')" />
                         <flux:input name="locales[{{ $code }}][alt]" :label="__('admin.alt_text')" />
                         <flux:input name="locales[{{ $code }}][caption]" :label="__('admin.caption')" />
+                        <flux:input name="locales[{{ $code }}][process_stage]" label="Process stage" />
                     </div>
                 </div>
             @endforeach
@@ -189,16 +209,28 @@
                                         @endforeach
                                     </select>
                                 </div>
+                                <div class="space-y-2">
+                                    <flux:label>Semantic role</flux:label>
+                                    <select name="semantic_role" class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-900">
+                                        <option value="">Auto</option>
+                                        @foreach (\App\Support\ConceptMedia::SEMANTIC_ROLES as $role)
+                                            <option value="{{ $role }}" @selected(old('semantic_role', $media->getCustomProperty('semantic_role')) === $role)>{{ ucfirst($role) }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <flux:input name="source_label" value="{{ old('source_label', $media->getCustomProperty('source_label')) }}" label="Technical source label" />
+                                <flux:input name="source_url" value="{{ old('source_url', $media->getCustomProperty('source_url')) }}" label="Technical source URL" placeholder="https://…" />
                                 @foreach (\App\Support\Locales::codes() as $code)
                                     @php
                                         $loc = $media->getCustomProperty('locales')[$code] ?? [];
                                     @endphp
                                     <div class="rounded border border-zinc-100 p-3 dark:border-zinc-800">
                                         <flux:text class="text-xs font-semibold text-zinc-500">{{ strtoupper($code) }}</flux:text>
-                                        <div class="mt-2 grid gap-2 sm:grid-cols-3">
+                                        <div class="mt-2 grid gap-2 sm:grid-cols-2">
                                             <flux:input name="locales[{{ $code }}][title]" value="{{ $loc['title'] ?? '' }}" :label="__('admin.title')" />
                                             <flux:input name="locales[{{ $code }}][alt]" value="{{ $loc['alt'] ?? '' }}" :label="__('admin.alt')" />
                                             <flux:input name="locales[{{ $code }}][caption]" value="{{ $loc['caption'] ?? '' }}" :label="__('admin.caption')" />
+                                            <flux:input name="locales[{{ $code }}][process_stage]" value="{{ $loc['process_stage'] ?? '' }}" label="Process stage" />
                                         </div>
                                     </div>
                                 @endforeach
@@ -233,6 +265,7 @@
         @else
             <form method="post" action="{{ route('admin.concepts.translations.store', $concept) }}" class="mt-6 grid max-w-3xl gap-4">
                 @csrf
+                <input type="hidden" name="return_to" value="{{ $editorialReturn }}" />
                 <div class="space-y-2">
                     <flux:label>{{ __('admin.language') }}</flux:label>
                     <select name="language_id" required class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-900">
@@ -249,34 +282,114 @@
                     @endforeach
                 </select>
             </div>
+            <div class="space-y-2">
+                <flux:label>{{ __('admin.terminology_status') }}</flux:label>
+                <select name="terminology_status" required class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-900">
+                    @foreach ($terminologyStatuses as $ts)
+                        <option value="{{ $ts }}" @selected(old('terminology_status', 'draft') === $ts)>{{ __('admin.terminology_status_'.$ts) }}</option>
+                    @endforeach
+                </select>
+            </div>
                 <flux:input name="term" :label="__('admin.term')" required />
                 <flux:input name="slug" :label="__('admin.url_slug')" required />
                 <flux:textarea name="short_definition" rows="2" :label="__('admin.short_definition')"></flux:textarea>
                 <flux:textarea name="full_definition" rows="4" :label="__('admin.full_definition')"></flux:textarea>
+                <flux:textarea name="editorial_notes" rows="2" :label="__('admin.editorial_notes')"></flux:textarea>
+                <flux:textarea name="source_reference_text" rows="2" :label="__('admin.source_reference_text')"></flux:textarea>
+                <div class="grid gap-4 md:grid-cols-2">
+                    <flux:input type="datetime-local" name="validated_at" :label="__('admin.validated_at')" />
+                    <div class="space-y-2">
+                        <flux:label>{{ __('admin.validated_by') }}</flux:label>
+                        <select name="validated_by" class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-900">
+                            <option value="">{{ __('admin.unassigned') }}</option>
+                            @foreach ($validators as $validator)
+                                <option value="{{ $validator->id }}">{{ $validator->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
                 <flux:button type="submit" variant="primary" size="sm">{{ __('admin.add_locale') }}</flux:button>
             </form>
         @endif
     </flux:card>
 
     {{-- Per-locale editors --}}
+    @php
+        $translationByLocale = $concept->translations
+            ->filter(fn ($t) => filled($t->language?->code))
+            ->keyBy(fn ($t) => $t->language->code);
+        $activeLocaleCodes = $translationByLocale->keys()->all();
+        $allLocaleCodes = $languages->pluck('code')->all();
+        $missingLocaleCodes = array_values(array_diff($allLocaleCodes, $activeLocaleCodes));
+    @endphp
+    <flux:card class="mt-8 p-6">
+        <flux:heading size="md">{{ __('admin.locale_coverage') }}</flux:heading>
+        <div class="mt-3 flex flex-wrap items-center gap-2">
+            @include('partials.ui.semantic-chip', ['label' => __('admin.published_locales').': '.count($activeLocaleCodes).'/'.count($allLocaleCodes), 'interactive' => false])
+            @if ($missingLocaleCodes !== [])
+                @include('partials.ui.semantic-chip', ['label' => __('admin.missing_locales').': '.count($missingLocaleCodes), 'interactive' => false])
+            @endif
+        </div>
+        <div class="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            @foreach ($languages as $lang)
+                @php
+                    $localeCode = $lang->code;
+                    $localeTranslation = $translationByLocale->get($localeCode);
+                @endphp
+                <div class="flex items-center justify-between rounded-lg border border-zinc-200/90 bg-zinc-50/70 px-3 py-2 dark:border-zinc-800 dark:bg-zinc-900/40">
+                    <div class="flex items-center gap-2">
+                        @include('partials.ui.locale-indicator', ['code' => $localeCode, 'active' => false])
+                        <span class="text-xs text-zinc-600 dark:text-zinc-300">{{ $lang->native_name ?? $lang->name }}</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        @if ($localeTranslation)
+                            @include('partials.ui.status-badge', [
+                                'label' => $localeTranslation->status === 'review' ? __('admin.in_review') : ucfirst($localeTranslation->status),
+                                'status' => $localeTranslation->status,
+                            ])
+                            <a href="#locale-{{ $localeCode }}" class="text-xs font-medium text-zinc-700 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-600 dark:text-zinc-200 dark:decoration-zinc-600">
+                                {{ __('admin.edit') }}
+                            </a>
+                        @else
+                            @include('partials.ui.status-badge', ['label' => __('admin.missing'), 'status' => 'archived'])
+                        @endif
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    </flux:card>
+
     @foreach ($concept->translations->sortBy('language_id') as $translation)
-        <flux:card class="mt-8 p-6" id="locale-{{ $translation->language?->code }}">
+        <flux:card class="mt-8 p-6" id="locale-{{ $translation->language?->code }}" data-locale-editor="{{ $translation->language?->code }}">
             <div class="flex flex-wrap items-baseline justify-between gap-2">
-                <flux:heading size="lg">
-                    {{ strtoupper($translation->language?->code ?? '?') }}
-                    — {{ $translation->language?->native_name ?? $translation->language?->name }}
-                </flux:heading>
+                <div class="flex flex-wrap items-center gap-2">
+                    @include('partials.ui.locale-indicator', ['code' => $translation->language?->code ?? '?', 'active' => true, 'size' => 'md'])
+                    <flux:heading size="lg">{{ $translation->language?->native_name ?? $translation->language?->name }}</flux:heading>
+                    @include('partials.ui.status-badge', [
+                        'label' => $translation->status === 'review' ? __('admin.in_review') : ucfirst($translation->status),
+                        'status' => $translation->status,
+                    ])
+                </div>
                 <flux:text class="text-xs text-zinc-500">#{{ $translation->id }}</flux:text>
             </div>
 
             <form method="post" action="{{ route('admin.concepts.translations.update', [$concept, $translation]) }}" class="mt-6 space-y-4">
                 @csrf
                 @method('PUT')
+                <input type="hidden" name="return_to" value="{{ $editorialReturn }}" />
                 <div class="space-y-2">
                     <flux:label>{{ __('admin.translation_status') }}</flux:label>
                     <select name="status" required class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-900">
                         @foreach ($workflowStates as $st)
                             <option value="{{ $st }}" @selected(old('status', $translation->status) === $st)>{{ ucfirst($st) }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="space-y-2">
+                    <flux:label>{{ __('admin.terminology_status') }}</flux:label>
+                    <select name="terminology_status" required class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-900">
+                        @foreach ($terminologyStatuses as $ts)
+                            <option value="{{ $ts }}" @selected(old('terminology_status', $translation->terminology_status) === $ts)>{{ __('admin.terminology_status_'.$ts) }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -299,6 +412,27 @@
                 <flux:textarea name="short_definition" rows="3" :label="__('admin.short_definition')">{{ old('short_definition', $translation->short_definition) }}</flux:textarea>
                 <flux:textarea name="full_definition" rows="8" :label="__('admin.full_definition')">{{ old('full_definition', $translation->full_definition) }}</flux:textarea>
                 <flux:textarea name="industry_notes" rows="3" :label="__('admin.industry_notes')">{{ old('industry_notes', $translation->industry_notes) }}</flux:textarea>
+                <flux:textarea name="editorial_notes" rows="3" :label="__('admin.editorial_notes')">{{ old('editorial_notes', $translation->editorial_notes) }}</flux:textarea>
+                <flux:textarea name="source_reference_text" rows="3" :label="__('admin.source_reference_text')">{{ old('source_reference_text', $translation->source_reference_text) }}</flux:textarea>
+                <div class="grid gap-4 md:grid-cols-2">
+                    <flux:input
+                        type="datetime-local"
+                        name="validated_at"
+                        :label="__('admin.validated_at')"
+                        value="{{ old('validated_at', $translation->validated_at?->format('Y-m-d\TH:i')) }}"
+                    />
+                    <div class="space-y-2">
+                        <flux:label>{{ __('admin.validated_by') }}</flux:label>
+                        <select name="validated_by" class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-900">
+                            <option value="">{{ __('admin.unassigned') }}</option>
+                            @foreach ($validators as $validator)
+                                <option value="{{ $validator->id }}" @selected((string) old('validated_by', $translation->validated_by) === (string) $validator->id)>
+                                    {{ $validator->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
 
                 <flux:separator />
 
@@ -343,6 +477,6 @@
     @endforeach
 
     <div class="mt-8">
-        <flux:button variant="ghost" :href="route('admin.concepts.index')" wire:navigate>← {{ __('admin.back_to_concepts') }}</flux:button>
+        <flux:button variant="ghost" :href="$editorialReturn" wire:navigate>← {{ __('admin.back_to_concepts') }}</flux:button>
     </div>
 @endsection

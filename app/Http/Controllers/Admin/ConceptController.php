@@ -9,12 +9,15 @@ use App\Models\Concept;
 use App\Models\ConceptTranslation;
 use App\Models\Domain;
 use App\Models\Language;
+use App\Models\User;
 use App\Support\Editorial\DuplicateDetectionService;
 use App\Support\Editorial\SemanticRelationGuard;
+use App\Support\Editorial\TerminologyStatus;
 use App\Support\Editorial\WorkflowStatus;
 use App\Support\Search\QueuedSearchIndexer;
 use App\Support\SemanticGraph;
 use Illuminate\Contracts\View\View;
+use Illuminate\Support\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -80,10 +83,16 @@ final class ConceptController extends Controller
 
         $languages = Language::query()->where('is_active', true)->orderBy('code')->get();
         $domains = Domain::query()->where('is_active', true)->orderBy('slug')->get();
+        $validators = User::query()
+            ->where('is_admin', true)
+            ->orderBy('name')
+            ->get(['id', 'name']);
 
         return view('admin.concepts.create', [
             'languages' => $languages,
             'domains' => $domains,
+            'validators' => $validators,
+            'terminologyStatuses' => TerminologyStatus::all(),
         ]);
     }
 
@@ -125,6 +134,11 @@ final class ConceptController extends Controller
                 'slug' => $validated['slug'],
                 'short_definition' => $validated['short_definition'] ?? null,
                 'full_definition' => $validated['full_definition'] ?? null,
+                'terminology_status' => $validated['terminology_status'] ?? TerminologyStatus::DRAFT,
+                'validated_at' => $validated['validated_at'] ?? null,
+                'validated_by' => $validated['validated_by'] ?? null,
+                'editorial_notes' => $validated['editorial_notes'] ?? null,
+                'source_reference_text' => $validated['source_reference_text'] ?? null,
                 'seo_title' => null,
                 'seo_description' => null,
                 'meta_keywords' => null,
@@ -142,12 +156,12 @@ final class ConceptController extends Controller
             ->with('status', __('admin.msg_concept_created'));
     }
 
-    public function edit(Concept $concept): View
+    public function edit(Concept $concept, Request $request): View
     {
         $this->authorize('update', $concept);
 
         $concept->load([
-            'translations' => fn ($q) => $q->with(['language', 'examples' => fn ($eq) => $eq->orderBy('sort_order')]),
+            'translations' => fn ($q) => $q->with(['language', 'validator:id,name', 'examples' => fn ($eq) => $eq->orderBy('sort_order')]),
             'domains:id',
             'outgoingRelations' => fn ($q) => $q->with([
                 'relatedConcept' => fn ($rq) => $rq->with(['translations' => fn ($tq) => $tq->with('language')]),
@@ -157,18 +171,38 @@ final class ConceptController extends Controller
 
         $languages = Language::query()->where('is_active', true)->orderBy('code')->get();
         $domains = Domain::query()->where('is_active', true)->orderBy('slug')->get();
+        $validators = User::query()
+            ->where('is_admin', true)
+            ->orderBy('name')
+            ->get(['id', 'name']);
         $relationTypes = collect(SemanticGraph::STORED_TYPES)
             ->reject(fn (string $t): bool => $t === 'see_also')
             ->values()
             ->all();
 
+        $returnToInput = $request->query('return_to');
+        $safeReturnTo = is_string($returnToInput) && str_starts_with($returnToInput, '/admin/concepts')
+            ? $returnToInput
+            : null;
+        $indexQuery = $request->except('return_to');
+        $multilingualWarnings = $this->buildMultilingualWarnings($concept, $languages);
+        $terminologyWarnings = $this->buildTerminologyWarnings($concept);
+        $governanceWarnings = array_merge(
+            DuplicateDetectionService::crossLocaleTermCollisionWarnings($concept),
+            $multilingualWarnings,
+            $terminologyWarnings
+        );
+
         return view('admin.concepts.edit', [
             'concept' => $concept,
             'languages' => $languages,
             'domains' => $domains,
+            'validators' => $validators,
+            'terminologyStatuses' => TerminologyStatus::all(),
             'relationTypes' => $relationTypes,
             'workflowStates' => WorkflowStatus::all(),
             'semanticWarnings' => SemanticRelationGuard::semanticWarningsForConcept($concept),
+            'governanceWarnings' => $governanceWarnings,
             'translationDuplicateWarnings' => $concept->translations
                 ->mapWithKeys(fn (ConceptTranslation $translation) => [
                     $translation->id => DuplicateDetectionService::findNearDuplicates(
@@ -177,6 +211,7 @@ final class ConceptController extends Controller
                         $concept->id
                     )->take(5),
                 ]),
+            'editorialReturn' => $safeReturnTo ?? route('admin.concepts.index', $indexQuery),
         ]);
     }
 
@@ -197,8 +232,13 @@ final class ConceptController extends Controller
 
         QueuedSearchIndexer::queueConcept((int) $concept->id);
 
+        $returnTo = $request->input('return_to');
+        $safeReturnTo = is_string($returnTo) && str_starts_with($returnTo, '/admin/concepts')
+            ? $returnTo
+            : null;
+
         return redirect()
-            ->route('admin.concepts.edit', $concept)
+            ->route('admin.concepts.edit', ['concept' => $concept, 'return_to' => $safeReturnTo])
             ->with('status', __('admin.msg_concept_updated'));
     }
 
@@ -211,5 +251,78 @@ final class ConceptController extends Controller
         return redirect()
             ->route('admin.concepts.index')
             ->with('status', __('admin.msg_concept_deleted'));
+    }
+
+    /**
+     * @param  Collection<int, Language>  $languages
+     * @return list<string>
+     */
+    private function buildMultilingualWarnings(Concept $concept, Collection $languages): array
+    {
+        $warnings = [];
+        $activeLanguageIds = $languages->pluck('id')->all();
+        $activeLanguageCodes = $languages->pluck('code')->all();
+
+        $presentCodes = $concept->translations
+            ->filter(fn (ConceptTranslation $translation): bool => in_array($translation->language_id, $activeLanguageIds, true))
+            ->pluck('language.code')
+            ->filter()
+            ->values()
+            ->all();
+
+        $missingCodes = array_values(array_diff($activeLanguageCodes, $presentCodes));
+        if ($concept->status === WorkflowStatus::PUBLISHED && $missingCodes !== []) {
+            $warnings[] = 'Published concept has missing active locales: '.strtoupper(implode(', ', $missingCodes)).'.';
+        }
+
+        $publishedLocaleIds = $concept->translations
+            ->where('status', WorkflowStatus::PUBLISHED)
+            ->pluck('language_id')
+            ->unique()
+            ->values()
+            ->all();
+
+        $relationLocaleGaps = 0;
+        foreach ($concept->outgoingRelations as $relation) {
+            $peer = $relation->relatedConcept;
+            if ($peer === null) {
+                continue;
+            }
+            foreach ($publishedLocaleIds as $languageId) {
+                $hasPeerTranslation = $peer->translations->contains(function (ConceptTranslation $translation) use ($languageId): bool {
+                    return $translation->language_id === $languageId && $translation->status === WorkflowStatus::PUBLISHED;
+                });
+                if (! $hasPeerTranslation) {
+                    $relationLocaleGaps++;
+                    break;
+                }
+            }
+        }
+        if ($relationLocaleGaps > 0) {
+            $warnings[] = sprintf('%d semantic relation(s) have weak locale parity against this concept published locales.', $relationLocaleGaps);
+        }
+
+        return $warnings;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function buildTerminologyWarnings(Concept $concept): array
+    {
+        $warnings = [];
+        foreach ($concept->translations as $translation) {
+            $status = (string) ($translation->terminology_status ?? TerminologyStatus::DRAFT);
+            if (! TerminologyStatus::isWorkflowCoherent($status, $translation->status)) {
+                $warnings[] = sprintf(
+                    'Locale %s has terminology/workflow mismatch (%s vs %s).',
+                    strtoupper((string) ($translation->language?->code ?? '?')),
+                    $status,
+                    $translation->status
+                );
+            }
+        }
+
+        return $warnings;
     }
 }

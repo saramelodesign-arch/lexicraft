@@ -95,9 +95,7 @@ new class extends Component
         </div>
 
         @if ($this->terms->isEmpty())
-            <p class="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-                {{ __('search.no_terms_for_letter') }}
-            </p>
+            @include('partials.ui.empty-state', ['message' => __('search.no_terms_for_letter')])
         @else
             <ul class="divide-y divide-zinc-200/90 dark:divide-zinc-800" role="list">
                 @foreach ($this->terms as $row)
@@ -128,9 +126,9 @@ new class extends Component
                                             ? ($domain->translations->firstWhere('language_id', $this->languageId)?->name ?? $domain->slug)
                                             : $domain->slug;
                                     @endphp
-                                    <flux:badge size="sm" variant="outline" wire:key="d-{{ $row->id }}-{{ $domain->id }}">
-                                        {{ $label }}
-                                    </flux:badge>
+                                    <span wire:key="d-{{ $row->id }}-{{ $domain->id }}">
+                                        @include('partials.ui.semantic-chip', ['label' => $label, 'interactive' => false])
+                                    </span>
                                 @endforeach
                             </div>
                         @endif

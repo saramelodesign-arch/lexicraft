@@ -30,8 +30,11 @@
                 <a
                     href="{{ route('learning.flashcards', ['locale' => $locale]) }}"
                     wire:navigate
-                    class="block rounded-xl border border-zinc-200 bg-zinc-50 p-5 transition-colors hover:border-zinc-300 hover:bg-white dark:border-zinc-800 dark:bg-zinc-900/50 dark:hover:border-zinc-600"
+                    class="block rounded-lg border border-zinc-200/90 bg-white p-5 transition-colors hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900/40 dark:hover:border-zinc-600"
                 >
+                    <div class="mb-2">
+                        @include('partials.ui.semantic-chip', ['label' => __('ui.flashcards'), 'interactive' => false])
+                    </div>
                     <h2 class="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{{ __('ui.flashcards') }}</h2>
                     <p class="mt-2 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
                         {{ __('learning.flashcards_card_description') }}
@@ -40,8 +43,11 @@
                 <a
                     href="{{ route('learning.semantic', ['locale' => $locale]) }}"
                     wire:navigate
-                    class="block rounded-xl border border-zinc-200 bg-zinc-50 p-5 transition-colors hover:border-zinc-300 hover:bg-white dark:border-zinc-800 dark:bg-zinc-900/50 dark:hover:border-zinc-600"
+                    class="block rounded-lg border border-zinc-200/90 bg-white p-5 transition-colors hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900/40 dark:hover:border-zinc-600"
                 >
+                    <div class="mb-2">
+                        @include('partials.ui.semantic-chip', ['label' => __('ui.semantic_practice'), 'interactive' => false])
+                    </div>
                     <h2 class="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{{ __('ui.semantic_practice') }}</h2>
                     <p class="mt-2 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
                         {{ __('learning.semantic_card_description') }}
@@ -50,8 +56,11 @@
                 <a
                     href="{{ route('learning.quizzes', ['locale' => $locale]) }}"
                     wire:navigate
-                    class="block rounded-xl border border-zinc-200 bg-zinc-50 p-5 transition-colors hover:border-zinc-300 hover:bg-white dark:border-zinc-800 dark:bg-zinc-900/50 dark:hover:border-zinc-600"
+                    class="block rounded-lg border border-zinc-200/90 bg-white p-5 transition-colors hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900/40 dark:hover:border-zinc-600"
                 >
+                    <div class="mb-2">
+                        @include('partials.ui.semantic-chip', ['label' => __('ui.quizzes'), 'interactive' => false])
+                    </div>
                     <h2 class="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{{ __('ui.quizzes') }}</h2>
                     <p class="mt-2 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
                         {{ __('learning.quizzes_card_description') }}

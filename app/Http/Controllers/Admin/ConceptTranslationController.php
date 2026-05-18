@@ -49,18 +49,38 @@ final class ConceptTranslationController extends Controller
             'slug' => $validated['slug'],
             'short_definition' => $validated['short_definition'] ?? null,
             'full_definition' => $validated['full_definition'] ?? null,
+            'terminology_status' => $validated['terminology_status'] ?? \App\Support\Editorial\TerminologyStatus::DRAFT,
+            'validated_at' => $validated['validated_at'] ?? null,
+            'validated_by' => $validated['validated_by'] ?? null,
             'seo_title' => null,
             'seo_description' => null,
             'meta_keywords' => null,
             'industry_notes' => null,
+            'editorial_notes' => $validated['editorial_notes'] ?? null,
+            'source_reference_text' => $validated['source_reference_text'] ?? null,
             'seo_canonical_url' => null,
             'og_title' => null,
             'og_description' => null,
         ]);
 
+        $returnTo = $request->input('return_to');
+        $safeReturnTo = is_string($returnTo) && str_starts_with($returnTo, '/admin/concepts')
+            ? $returnTo
+            : null;
+        $nearDuplicates = DuplicateDetectionService::findNearDuplicates(
+            (int) $validated['language_id'],
+            (string) $validated['term'],
+            $concept->id
+        )->take(3);
+        $warnings = [];
+        if ($nearDuplicates->isNotEmpty()) {
+            $warnings[] = 'Potential near-duplicate terms were detected in this locale. Review semantic overlap.';
+        }
+
         return redirect()
-            ->route('admin.concepts.edit', $concept)
-            ->with('status', __('admin.translation_added'));
+            ->route('admin.concepts.edit', ['concept' => $concept, 'return_to' => $safeReturnTo])
+            ->with('status', __('admin.translation_added'))
+            ->with('governance_warnings', $warnings);
     }
 
     public function update(UpdateConceptTranslationRequest $request, Concept $concept, ConceptTranslation $translation): RedirectResponse
@@ -89,10 +109,15 @@ final class ConceptTranslationController extends Controller
                 'slug' => $validated['slug'],
                 'short_definition' => $validated['short_definition'] ?? null,
                 'full_definition' => $validated['full_definition'] ?? null,
+                'terminology_status' => $validated['terminology_status'] ?? \App\Support\Editorial\TerminologyStatus::DRAFT,
+                'validated_at' => $validated['validated_at'] ?? null,
+                'validated_by' => $validated['validated_by'] ?? null,
                 'seo_title' => $validated['seo_title'] ?? null,
                 'seo_description' => $validated['seo_description'] ?? null,
                 'meta_keywords' => $validated['meta_keywords'] ?? null,
                 'industry_notes' => $validated['industry_notes'] ?? null,
+                'editorial_notes' => $validated['editorial_notes'] ?? null,
+                'source_reference_text' => $validated['source_reference_text'] ?? null,
                 'seo_canonical_url' => $validated['seo_canonical_url'] ?? null,
                 'og_title' => $validated['og_title'] ?? null,
                 'og_description' => $validated['og_description'] ?? null,
@@ -148,8 +173,24 @@ final class ConceptTranslationController extends Controller
             }
         });
 
+        $returnTo = $request->input('return_to');
+        $safeReturnTo = is_string($returnTo) && str_starts_with($returnTo, '/admin/concepts')
+            ? $returnTo
+            : null;
+
+        $nearDuplicates = DuplicateDetectionService::findNearDuplicates(
+            (int) $translation->language_id,
+            (string) $validated['term'],
+            $concept->id
+        )->take(3);
+        $warnings = [];
+        if ($nearDuplicates->isNotEmpty()) {
+            $warnings[] = 'Potential near-duplicate terms were detected in this locale. Review semantic overlap.';
+        }
+
         return redirect()
-            ->route('admin.concepts.edit', $concept)
-            ->with('status', __('admin.translation_saved'));
+            ->route('admin.concepts.edit', ['concept' => $concept, 'return_to' => $safeReturnTo])
+            ->with('status', __('admin.translation_saved'))
+            ->with('governance_warnings', $warnings);
     }
 }

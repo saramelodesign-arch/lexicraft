@@ -64,6 +64,7 @@ Artisan::command('lexicraft:import-terminology {file : CSV file path} {--dry-run
                 conceptStatus: (string) ($assoc['concept_status'] ?? WorkflowStatus::DRAFT),
                 translationStatus: (string) ($assoc['translation_status'] ?? ($assoc['concept_status'] ?? WorkflowStatus::DRAFT)),
                 domains: $domains,
+                terminologyStatus: (($ts = trim((string) ($assoc['terminology_status'] ?? ''))) === '') ? null : $ts,
             );
         }
     } finally {
@@ -78,6 +79,17 @@ Artisan::command('lexicraft:import-terminology {file : CSV file path} {--dry-run
     $this->line('Created translations: '.$summary['created_translations']);
     $this->line('Updated translations: '.$summary['updated_translations']);
     $this->line('Skipped: '.$summary['skipped']);
+    if (isset($summary['warned'])) {
+        $this->line('Warned rows: '.$summary['warned']);
+    }
+
+    if (($summary['warnings'] ?? []) !== []) {
+        $this->newLine();
+        $this->warn('Non-blocking governance warnings:');
+        foreach ($summary['warnings'] as $warning) {
+            $this->line('- '.$warning);
+        }
+    }
 
     if ($summary['errors'] !== []) {
         $this->newLine();

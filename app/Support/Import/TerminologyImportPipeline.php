@@ -9,6 +9,7 @@ use App\Models\Language;
 use App\Support\Editorial\DuplicateDetectionService;
 use App\Support\Editorial\EditorialQualityGuard;
 use App\Support\Editorial\SlugGovernance;
+use App\Support\Editorial\TerminologyStatus;
 use App\Support\Editorial\WorkflowStatus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -17,7 +18,16 @@ final class TerminologyImportPipeline
 {
     /**
      * @param  iterable<TerminologyImportRow>  $rows
-     * @return array{processed: int, created_concepts: int, created_translations: int, updated_translations: int, skipped: int, errors: list<string>}
+     * @return array{
+     *     processed: int,
+     *     created_concepts: int,
+     *     created_translations: int,
+     *     updated_translations: int,
+     *     skipped: int,
+     *     warnings: list<string>,
+     *     warned: int,
+     *     errors: list<string>
+     * }
      */
     public function import(iterable $rows, bool $dryRun = true): array
     {
@@ -27,14 +37,26 @@ final class TerminologyImportPipeline
             'created_translations' => 0,
             'updated_translations' => 0,
             'skipped' => 0,
+            'warnings' => [],
+            'warned' => 0,
             'errors' => [],
         ];
+        /** @var array<string, array<string, string>> $batchSlugMap */
+        $batchSlugMap = [];
 
         foreach ($rows as $index => $row) {
             $summary['processed']++;
 
             try {
+                $this->validateBatchSlugMapping($row, $batchSlugMap);
                 $this->validateRow($row);
+                $warnings = $this->warningsForRow($row);
+                foreach ($warnings as $warning) {
+                    $summary['warnings'][] = 'Row '.($index + 1).': '.$warning;
+                }
+                if ($warnings !== []) {
+                    $summary['warned'] += 1;
+                }
                 if ($dryRun) {
                     continue;
                 }
@@ -65,6 +87,20 @@ final class TerminologyImportPipeline
             throw ValidationException::withMessages([
                 'translation_status' => __('admin.msg_invalid_translation_workflow', ['status' => $row->translationStatus]),
             ]);
+        }
+
+        if ($row->terminologyStatus !== null) {
+            if (! TerminologyStatus::isValid($row->terminologyStatus)) {
+                throw ValidationException::withMessages([
+                    'terminology_status' => 'Invalid terminology status for import row.',
+                ]);
+            }
+
+            if (! TerminologyStatus::isWorkflowCoherent($row->terminologyStatus, $row->translationStatus)) {
+                throw ValidationException::withMessages([
+                    'terminology_status' => 'Terminology status is not coherent with translation workflow state.',
+                ]);
+            }
         }
 
         if (! SlugGovernance::isSeoSafe($row->slug)) {
@@ -126,6 +162,7 @@ final class TerminologyImportPipeline
         if ($translation !== null) {
             $translation->update([
                 'status' => $row->translationStatus,
+                'terminology_status' => $row->terminologyStatus ?? $translation->terminology_status,
                 'term' => $row->term,
                 'short_definition' => $row->shortDefinition,
                 'full_definition' => $row->fullDefinition,
@@ -155,6 +192,7 @@ final class TerminologyImportPipeline
             'concept_id' => $concept->id,
             'language_id' => $languageId,
             'status' => $row->translationStatus,
+            'terminology_status' => $row->terminologyStatus ?? TerminologyStatus::DRAFT,
             'term' => $row->term,
             'slug' => $row->slug,
             'short_definition' => $row->shortDefinition,
@@ -189,5 +227,49 @@ final class TerminologyImportPipeline
             ->all();
 
         $concept->domains()->sync($domainIds);
+    }
+
+    /**
+     * @param  array<string, array<string, string>>  $batchSlugMap
+     */
+    private function validateBatchSlugMapping(TerminologyImportRow $row, array &$batchSlugMap): void
+    {
+        $locale = mb_strtolower(trim($row->locale), 'UTF-8');
+        $slug = mb_strtolower(trim($row->slug), 'UTF-8');
+        if ($locale === '' || $slug === '') {
+            return;
+        }
+
+        $term = DuplicateDetectionService::normalizeTerm($row->term);
+        $known = $batchSlugMap[$locale][$slug] ?? null;
+        if ($known !== null && $known !== $term) {
+            throw ValidationException::withMessages([
+                'slug' => 'Conflicting locale slug mapping detected within import batch.',
+            ]);
+        }
+
+        $batchSlugMap[$locale][$slug] = $term;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function warningsForRow(TerminologyImportRow $row): array
+    {
+        $warnings = [];
+        $languageId = Language::activeIdForCode($row->locale);
+        if ($languageId === null) {
+            return $warnings;
+        }
+
+        $nearDuplicates = DuplicateDetectionService::findNearDuplicates($languageId, $row->term)->take(3);
+        if ($nearDuplicates->isNotEmpty()) {
+            $hits = $nearDuplicates
+                ->map(fn (ConceptTranslation $translation): string => sprintf('%s (#%d)', $translation->term, $translation->concept_id))
+                ->implode(', ');
+            $warnings[] = 'Potential near-duplicate terminology: '.$hits;
+        }
+
+        return $warnings;
     }
 }

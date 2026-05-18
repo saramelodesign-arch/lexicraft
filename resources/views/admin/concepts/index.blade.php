@@ -63,7 +63,11 @@
                     <tr class="hover:bg-zinc-50/80 dark:hover:bg-zinc-900/40">
                         <td class="whitespace-nowrap px-4 py-3 font-mono text-xs">{{ $concept->id }}</td>
                         <td class="px-4 py-3">
-                            <span class="rounded-full bg-zinc-200 px-2 py-0.5 text-xs font-medium dark:bg-zinc-700">{{ ucfirst($concept->status) }}</span>
+                            @include('partials.ui.status-badge', [
+                                'label' => $concept->status === 'review' ? __('admin.in_review') : ucfirst($concept->status),
+                                'status' => $concept->status,
+                                'size' => 'md',
+                            ])
                         </td>
                         <td class="px-4 py-3">
                             {{ $concept->translations_count }} / {{ $languages->count() }}
@@ -72,7 +76,7 @@
                             {{ $concept->published_translations_count }} / {{ $languages->count() }}
                         </td>
                         <td class="px-4 py-3">
-                            <flux:link :href="route('admin.concepts.edit', $concept)" wire:navigate class="font-medium">
+                            <flux:link :href="route('admin.concepts.edit', array_merge(['concept' => $concept], request()->query()))" wire:navigate class="font-medium">
                                 {{ $concept->translations->pluck('term')->take(3)->join(' · ') ?: '—' }}
                             </flux:link>
                         </td>

@@ -22,6 +22,8 @@ return [
     'no_domains_configured' => 'Aún no hay dominios configurados.',
     'no_published_concepts_for_domain' => 'Ningún concepto publicado en este idioma está etiquetado con este dominio todavía.',
     'no_published_terms_language' => 'No hay términos publicados en este idioma.',
+    'no_sub_domains_documented' => 'Aún no hay subdominios documentados bajo este dominio.',
+    'no_related_domains_documented' => 'Aún no hay dominios industriales relacionados documentados.',
     'no_terms' => 'Sin términos',
     'no_terms_for_letter' => 'Aún no hay términos publicados para esta letra en el idioma seleccionado.',
     'one_published_term' => '1 término publicado',

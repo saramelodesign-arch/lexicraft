@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Support\ConceptSearchDocument;
+use App\Support\Editorial\TerminologyStatus;
 use App\Support\Editorial\WorkflowStatus;
 use App\Support\GlossaryLetterSql;
 use App\Support\Locales;
@@ -30,6 +31,9 @@ class ConceptTranslation extends Model
         'concept_id',
         'language_id',
         'status',
+        'terminology_status',
+        'validated_at',
+        'validated_by',
         'term',
         'slug',
         'short_definition',
@@ -41,12 +45,24 @@ class ConceptTranslation extends Model
         'og_description',
         'meta_keywords',
         'industry_notes',
+        'editorial_notes',
+        'source_reference_text',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'validated_at' => 'datetime',
+        ];
+    }
 
     protected static function booted(): void
     {
         static::creating(function (ConceptTranslation $translation): void {
             if (WorkflowStatus::isValid((string) $translation->status)) {
+                if (! TerminologyStatus::isValid((string) $translation->terminology_status)) {
+                    $translation->terminology_status = TerminologyStatus::DRAFT;
+                }
                 return;
             }
 
@@ -54,6 +70,9 @@ class ConceptTranslation extends Model
             $translation->status = is_string($conceptStatus) && WorkflowStatus::isPublic($conceptStatus)
                 ? WorkflowStatus::PUBLISHED
                 : WorkflowStatus::DRAFT;
+            if (! TerminologyStatus::isValid((string) $translation->terminology_status)) {
+                $translation->terminology_status = TerminologyStatus::DRAFT;
+            }
         });
 
         static::saved(function (ConceptTranslation $translation): void {
@@ -73,6 +92,11 @@ class ConceptTranslation extends Model
     public function language(): BelongsTo
     {
         return $this->belongsTo(Language::class);
+    }
+
+    public function validator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'validated_by');
     }
 
     public function examples(): HasMany
@@ -227,14 +251,15 @@ class ConceptTranslation extends Model
 
             if ($isPostgres) {
                 $w->orWhereRaw(
-                    "to_tsvector('simple', concat_ws(' ', coalesce(term, ''), coalesce(short_definition, ''), coalesce(full_definition, ''), coalesce(seo_title, ''), coalesce(seo_description, ''), coalesce(industry_notes, ''))) @@ plainto_tsquery('simple', ?)",
+                    "to_tsvector('simple', concat_ws(' ', coalesce(term, ''), coalesce(short_definition, ''), coalesce(full_definition, ''), coalesce(seo_title, ''), coalesce(seo_description, ''), coalesce(industry_notes, ''), coalesce(editorial_notes, ''))) @@ plainto_tsquery('simple', ?)",
                     [$needle],
                 );
             } else {
                 // Keep wildcard fallback narrower to avoid full-table wildcard chains.
                 $w->orWhere('short_definition', 'LIKE', $containsPattern)
                     ->orWhere('seo_title', 'LIKE', $containsPattern)
-                    ->orWhere('industry_notes', 'LIKE', $containsPattern);
+                    ->orWhere('industry_notes', 'LIKE', $containsPattern)
+                    ->orWhere('editorial_notes', 'LIKE', $containsPattern);
             }
 
             if (mb_strlen($needle) < 4) {

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Concept;
+use App\Support\ConceptMedia;
 use App\Support\Locales;
 use App\Support\TrustedEmbedUrl;
 use Illuminate\Http\RedirectResponse;
@@ -18,20 +19,22 @@ final class ConceptMediaController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function customPropertiesFromRequest(Request $request): array
+    private function customPropertiesFromRequest(Request $request, bool $allowDefaults = true): array
     {
         $locales = [];
         foreach (Locales::codes() as $code) {
             $title = trim((string) $request->input("locales.{$code}.title", ''));
             $alt = trim((string) $request->input("locales.{$code}.alt", ''));
             $caption = trim((string) $request->input("locales.{$code}.caption", ''));
-            if ($title === '' && $alt === '' && $caption === '') {
+            $processStage = trim((string) $request->input("locales.{$code}.process_stage", ''));
+            if ($title === '' && $alt === '' && $caption === '' && $processStage === '') {
                 continue;
             }
             $locales[$code] = array_filter([
                 'title' => $title !== '' ? $title : null,
                 'alt' => $alt !== '' ? $alt : null,
                 'caption' => $caption !== '' ? $caption : null,
+                'process_stage' => $processStage !== '' ? $processStage : null,
             ], fn ($v) => $v !== null);
         }
 
@@ -48,6 +51,28 @@ final class ConceptMediaController extends Controller
         $kind = trim((string) $request->input('kind', ''));
         if (in_array($kind, ['diagram', 'photo'], true)) {
             $props['kind'] = $kind;
+        }
+
+        $semanticRole = ConceptMedia::sanitizeSemanticRole($request->input('semantic_role'));
+        if ($semanticRole !== null) {
+            $props['semantic_role'] = $semanticRole;
+        } elseif ($allowDefaults) {
+            $collection = (string) $request->input('collection', '');
+            $props['semantic_role'] = match ($collection) {
+                'videos' => 'process',
+                'documents' => 'reference',
+                'featured' => 'construction',
+                default => ($kind === 'diagram' ? 'construction' : 'reference'),
+            };
+        }
+
+        $sourceLabel = trim((string) $request->input('source_label', ''));
+        if ($sourceLabel !== '') {
+            $props['source_label'] = $sourceLabel;
+        }
+        $sourceUrl = trim((string) $request->input('source_url', ''));
+        if ($sourceUrl !== '' && filter_var($sourceUrl, FILTER_VALIDATE_URL)) {
+            $props['source_url'] = $sourceUrl;
         }
 
         return $props;
@@ -85,6 +110,9 @@ final class ConceptMediaController extends Controller
                 }
             }],
             'kind' => ['nullable', 'string', Rule::in(['diagram', 'photo'])],
+            'semantic_role' => ['nullable', 'string', Rule::in(ConceptMedia::SEMANTIC_ROLES)],
+            'source_label' => ['nullable', 'string', 'max:255'],
+            'source_url' => ['nullable', 'url', 'max:2048'],
         ]);
 
         $map = [
@@ -123,9 +151,12 @@ final class ConceptMediaController extends Controller
                 }
             }],
             'kind' => ['nullable', 'string', Rule::in(['diagram', 'photo'])],
+            'semantic_role' => ['nullable', 'string', Rule::in(ConceptMedia::SEMANTIC_ROLES)],
+            'source_label' => ['nullable', 'string', 'max:255'],
+            'source_url' => ['nullable', 'url', 'max:2048'],
         ]);
 
-        $props = array_merge($media->custom_properties ?? [], $this->customPropertiesFromRequest($request));
+        $props = array_merge($media->custom_properties ?? [], $this->customPropertiesFromRequest($request, false));
 
         $media->update([
             'name' => $request->input('name') ?: $media->name,
@@ -163,7 +194,7 @@ final class ConceptMediaController extends Controller
     private function allowedMimeTypesForCollection(string $collection): array
     {
         return match ($collection) {
-            'featured', 'gallery' => ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
+            'featured', 'gallery' => ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/svg+xml'],
             'videos' => ['image/jpeg', 'image/png', 'image/webp', 'video/mp4'],
             'documents' => ['application/pdf'],
             default => [],

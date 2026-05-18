@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
             LanguagesSeeder::class,
             DomainsSeeder::class,
             ConceptsSeeder::class,
+            FootwearConstructionConceptMediaSeeder::class,
             LearningQuizSeeder::class,
         ]);
 

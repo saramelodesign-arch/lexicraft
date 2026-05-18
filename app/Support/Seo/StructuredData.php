@@ -233,7 +233,7 @@ final class StructuredData
             'url' => $canonical,
         ];
 
-        return $rows;
+        return self::dedupeBreadcrumbRows($rows);
     }
 
     /**
@@ -249,7 +249,13 @@ final class StructuredData
             if ($current->parent_id === null) {
                 break;
             }
-            $current = Domain::query()->whereKey($current->parent_id)->first() ?? null;
+            if ($current->relationLoaded('parent')) {
+                $current = $current->parent;
+                continue;
+            }
+
+            $current->loadMissing('parent');
+            $current = $current->parent;
         }
 
         return $ordered;
@@ -282,7 +288,27 @@ final class StructuredData
             }
         }
 
-        return $rows;
+        return self::dedupeBreadcrumbRows($rows);
+    }
+
+    /**
+     * @param  list<array{name: string, url: string}>  $rows
+     * @return list<array{name: string, url: string}>
+     */
+    private static function dedupeBreadcrumbRows(array $rows): array
+    {
+        $seen = [];
+        $clean = [];
+        foreach ($rows as $row) {
+            $key = $row['url'];
+            if (isset($seen[$key])) {
+                continue;
+            }
+            $seen[$key] = true;
+            $clean[] = $row;
+        }
+
+        return $clean;
     }
 
     /**

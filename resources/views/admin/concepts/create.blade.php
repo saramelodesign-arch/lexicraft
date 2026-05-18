@@ -59,8 +59,32 @@
                     <option value="archived" @selected(old('translation_status', old('status')) === 'archived')>{{ __('admin.archived') }}</option>
                 </select>
             </div>
+            <div class="space-y-2">
+                <flux:label>{{ __('admin.terminology_status') }}</flux:label>
+                <select name="terminology_status" required class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-900">
+                    @foreach ($terminologyStatuses as $status)
+                        <option value="{{ $status }}" @selected(old('terminology_status', 'draft') === $status)>{{ __('admin.terminology_status_'.$status) }}</option>
+                    @endforeach
+                </select>
+            </div>
             <flux:textarea name="short_definition" rows="3" :label="__('admin.short_definition')">{{ old('short_definition') }}</flux:textarea>
             <flux:textarea name="full_definition" rows="8" :label="__('admin.full_definition')">{{ old('full_definition') }}</flux:textarea>
+            <flux:textarea name="editorial_notes" rows="3" :label="__('admin.editorial_notes')">{{ old('editorial_notes') }}</flux:textarea>
+            <flux:textarea name="source_reference_text" rows="3" :label="__('admin.source_reference_text')">{{ old('source_reference_text') }}</flux:textarea>
+            <div class="grid gap-4 md:grid-cols-2">
+                <flux:input type="datetime-local" name="validated_at" value="{{ old('validated_at') }}" :label="__('admin.validated_at')" />
+                <div class="space-y-2">
+                    <flux:label>{{ __('admin.validated_by') }}</flux:label>
+                    <select name="validated_by" class="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-900">
+                        <option value="">{{ __('admin.unassigned') }}</option>
+                        @foreach ($validators as $validator)
+                            <option value="{{ $validator->id }}" @selected((string) old('validated_by') === (string) $validator->id)>
+                                {{ $validator->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
 
             <div class="flex gap-2">
                 <flux:button type="submit" variant="primary">{{ __('admin.create_concept') }}</flux:button>

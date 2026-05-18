@@ -16,5 +16,6 @@ final class TerminologyImportRow
         public readonly string $conceptStatus,
         public readonly string $translationStatus,
         public readonly array $domains = [],
+        public readonly ?string $terminologyStatus = null,
     ) {}
 }

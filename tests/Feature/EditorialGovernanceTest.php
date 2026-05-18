@@ -194,6 +194,90 @@ class EditorialGovernanceTest extends TestCase
         $this->assertNotEmpty($summary['errors']);
     }
 
+    #[Test]
+    public function translation_validated_status_requires_non_draft_workflow(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $language = $this->createLanguage('en');
+        $domain = \App\Models\Domain::factory()->create(['is_active' => true, 'slug' => 'governance']);
+
+        $response = $this->actingAs($admin)->post(route('admin.concepts.store'), [
+            'status' => 'draft',
+            'translation_status' => 'draft',
+            'language_id' => $language->id,
+            'term' => 'Terminology drift',
+            'slug' => 'terminology-drift',
+            'short_definition' => 'Draft short definition for governance checks.',
+            'full_definition' => 'Draft full definition for governance checks with enough editorial detail.',
+            'domain_ids' => [$domain->id],
+            'terminology_status' => 'validated',
+            'validated_at' => now()->toDateTimeString(),
+            'validated_by' => $admin->id,
+        ]);
+
+        $response->assertSessionHasErrors(['terminology_status']);
+    }
+
+    #[Test]
+    public function regional_or_deprecated_status_requires_editorial_context(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $language = $this->createLanguage('en');
+        $domain = \App\Models\Domain::factory()->create(['is_active' => true, 'slug' => 'regional-terms']);
+
+        $response = $this->actingAs($admin)->post(route('admin.concepts.store'), [
+            'status' => 'review',
+            'translation_status' => 'review',
+            'language_id' => $language->id,
+            'term' => 'Regional lasting gauge',
+            'slug' => 'regional-lasting-gauge',
+            'short_definition' => 'Controlled regional variation term used on specific markets.',
+            'full_definition' => 'Controlled regional variation term used on specific markets and explicit line instructions.',
+            'domain_ids' => [$domain->id],
+            'terminology_status' => 'regional',
+        ]);
+
+        $response->assertSessionHasErrors(['editorial_notes']);
+    }
+
+    #[Test]
+    public function import_pipeline_exposes_non_blocking_duplicate_warnings(): void
+    {
+        $this->createLanguage('en');
+        $domain = \App\Models\Domain::factory()->create(['is_active' => true, 'slug' => 'footwear']);
+
+        $concept = Concept::query()->create(['status' => 'published', 'difficulty_level' => null, 'is_featured' => false]);
+        $concept->domains()->sync([$domain->id]);
+        ConceptTranslation::query()->create([
+            'concept_id' => $concept->id,
+            'language_id' => Language::activeIdForCode('en'),
+            'status' => 'published',
+            'term' => 'Lasting pressure profile',
+            'slug' => 'lasting-pressure-profile',
+            'short_definition' => 'Existing term.',
+            'full_definition' => 'Existing long definition for matching.',
+        ]);
+
+        $pipeline = app(TerminologyImportPipeline::class);
+        $summary = $pipeline->import([
+            new TerminologyImportRow(
+                locale: 'en',
+                term: 'Lasting pressure profiling',
+                slug: 'lasting-pressure-profiling',
+                shortDefinition: 'Controlled import term.',
+                fullDefinition: 'Controlled import full definition for governance warning checks.',
+                conceptStatus: 'review',
+                translationStatus: 'review',
+                domains: ['footwear'],
+            ),
+        ], dryRun: true);
+
+        $this->assertSame(1, $summary['processed']);
+        $this->assertSame(0, $summary['skipped']);
+        $this->assertSame(1, $summary['warned']);
+        $this->assertNotEmpty($summary['warnings']);
+    }
+
     private function createLanguage(string $code): Language
     {
         return Language::query()->create([

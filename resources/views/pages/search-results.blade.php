@@ -12,7 +12,7 @@
     <livewire:layout.header />
 
     <main id="content" class="flex-1 px-4 py-10 sm:px-6 lg:px-8">
-        <div class="mx-auto max-w-3xl">
+        <div class="mx-auto max-w-4xl">
             <livewire:search.results :locale="$locale" />
         </div>
     </main>

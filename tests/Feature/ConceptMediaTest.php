@@ -60,7 +60,7 @@ class ConceptMediaTest extends TestCase
 
         $response = $this->get(route('glossary.concept', ['locale' => 'en', 'slug' => 'lasting']));
         $response->assertOk();
-        $response->assertSee('Featured image', false);
+        $response->assertSee('id="media-workflow-diagrams-heading"', false);
         $response->assertSee('property="og:image"', false);
         $response->assertSee('"image":', false);
     }
@@ -101,6 +101,7 @@ class ConceptMediaTest extends TestCase
             ->withCustomProperties([
                 'locales' => ['en' => ['title' => 'Photo', 'alt' => 'Photo alt', 'caption' => '']],
                 'kind' => 'photo',
+                'semantic_role' => 'process',
             ])
             ->toMediaCollection(Concept::COLLECTION_GALLERY);
 
@@ -109,6 +110,7 @@ class ConceptMediaTest extends TestCase
             ->withCustomProperties([
                 'locales' => ['en' => ['title' => 'Diagram', 'alt' => 'Diagram alt', 'caption' => 'CAD overlay']],
                 'kind' => 'diagram',
+                'semantic_role' => 'construction',
             ])
             ->toMediaCollection(Concept::COLLECTION_GALLERY);
 
@@ -122,9 +124,9 @@ class ConceptMediaTest extends TestCase
 
         $r = $this->get(route('glossary.concept', ['locale' => 'en', 'slug' => 'bench-process']));
         $r->assertOk();
-        $r->assertSee('Gallery', false);
-        $r->assertSee('Technical diagrams', false);
-        $r->assertSee('Videos', false);
+        $r->assertSee('id="media-workflow-diagrams-heading"', false);
+        $r->assertSee('CAD overlay', false);
+        $r->assertSee(__('messages.media_process_clips', [], 'en'), false);
         $r->assertSee('https://www.youtube.com/embed/placeholder', false);
         $r->assertSee('sandbox="allow-scripts allow-same-origin allow-presentation"', false);
     }
